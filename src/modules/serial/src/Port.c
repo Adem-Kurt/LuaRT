@@ -24,7 +24,8 @@ static const char *dtr_modes[] = { "disabled", "enabled", "handshake", NULL };
 static LUA_METHOD(PortTask, gc) {
     PortTask *task = (PortTask*)(lua_self(L, 1, Task)->userdata);
     free(task->line);
-    free(task->buffer);
+    if (task->bytesToRead)
+        free(task->buffer);
     CloseHandle(task->ov.hEvent);
     free(task);
     return 0;    
@@ -90,10 +91,6 @@ static int PortTaskContinue(lua_State *L, int status, lua_KContext ctx) {
     } else
 error:  
         lua_pushboolean(L, FALSE);
-    if (task->bytesToRead)
-        free(task->buffer);
-    CloseHandle(task->ov.hEvent);
-    free(task);
     return 1;
 }
 
@@ -145,9 +142,6 @@ loop:
 error:  
     lua_pushboolean(L, FALSE);
 done:
-    free(task->line);
-    CloseHandle(task->ov.hEvent);
-    free(task);
     return 1;
 }
 
