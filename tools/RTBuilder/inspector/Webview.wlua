@@ -36,6 +36,10 @@ function Webview:onLoaded()
 	]])
 end
 
+function Webview:onThemeChange()
+	self:reload()
+end
+
 function Webview:onReady()
 	self.mt.__newindex = self.newindex
 	for k, v in pairs(self.values) do
@@ -43,7 +47,7 @@ function Webview:onReady()
 	end
 	self:onLoaded()
 	inspector.Update(self)
-  inspector:onTrack(self)
+  	inspector:onTrack(self)
 end
 
 function Webview:onStartDump(file)

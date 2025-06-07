@@ -142,13 +142,14 @@ mainWindow.menu:add("&Settings").submenu = SettingsMenu
 local ThemeChange = SettingsMenu:add("Switch to "..(ui.theme == "light" and "dark" or "light").." &theme")
 
 function ThemeChange:onClick()
-	local old = ui.theme
-	local theme =  old == "light" and "dark" or "light"
-	ui.theme = theme
-	self.text = "Switch to "..old.." theme"
+	ui.theme = ui.theme == "light" and "dark" or "light"
+end
+
+function mainWindow:onThemeChange(isDark)
+    ThemeChange.text = "Switch to "..(isDark and "light" or "dark").." theme"
     if formWindow then
-        tracker:stop()
         formWindow:onClick()
+        inspector.panels.Window.widgets.bgcolor.update(formWindow)
     end
 end
 

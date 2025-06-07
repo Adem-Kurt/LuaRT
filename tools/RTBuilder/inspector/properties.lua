@@ -71,7 +71,7 @@ function properties.cursor(panel, obj, property)
         tracked.cursor = item.text
     end
     widget.update = function(tracked)
-        widget.selected = widget.items[tracked.cursor]
+        widget.selected = widget.items[tracked.cursor or "arrow"]
     end    
     return widget
 end
@@ -212,11 +212,17 @@ function properties.entry(panel, obj, property)
                     ui.error("A Widget named '"..widget.text.."' already exists.")
                     widget.text = lastvalue
                     tracked[property] = lastvalue
-                else
-                    panel.title = widget.text.." properties"
+                elseif widget.text:match("^[_%a][_%w]*$") ~= nil then
+                    if #widget.text < 13 then
+                        inspector.title = widget.text.." properties"
+                    else
+                        inspector.title = widget.text:sub(1,11).."... properties"
+                    end
                     tracked.name = widget.text
                     Widgets[widget.text] = tracked
                     Widgets[lastvalue] = nil
+                else
+                    ui.error(string.format("'%s' is not a valid Lua identifier", widget.text))
                 end
             else
                 local func = function() 

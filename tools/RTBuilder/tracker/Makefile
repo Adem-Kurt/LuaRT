@@ -15,51 +15,66 @@ MODULE=		tracker
 VERSION=	0.5
 SRC= 		src\tracker.obj
 
-LIBS= "$(LUART_PATH)"\lib\lua54.lib gdi32.lib kernel32.lib user32.lib comctl32.lib
+LUALIB= "$(LUART_PATH)\lib\lua54.lib"
+CFLAGS = 
+
+!if "$(BUILD)" == "debug"
+CFLAGS = /nologo /DLUA_BUILD_AS_DLL /D_WIN32_WINNT=0x0603 /DLUA_COMPAT_5_3 /DLUA_ARCH=\"$(_ARCH)\" /DLUART_MINOR=$(LUART_MINOR) /DLUART_MAJOR=$(LUART_MAJOR) /DLUART_RELEASE=$(LUART_RELEASE) /I"./src/include" /I"$(LUART_PATH)\include" /I"." /Z7 $(CFLAGS)
+LDFLAGS= /nologo /DEBUG
+MODNAME=$(MODULE)
+VERBOSE=
+PROGRESS= 
+!else
+!if "$(BUILD)" == "static"
+LUALIB= "$(LUART_PATH)\lib\lua54-static.lib"
+CFLAGS = /nologo /DRTSTATIC /DLUA_BUILD_AS_DLL /D_WIN32_WINNT=0x0603 /DLUA_COMPAT_5_3 /DLUA_ARCH=\"$(_ARCH)\" /DLUART_MINOR=$(LUART_MINOR) /DLUART_MAJOR=$(LUART_MAJOR) /DLUART_RELEASE=$(LUART_RELEASE) /I"$(LUART_PATH)\include" /I"." /I"./src/include" /MD /Gy /GF /GR- /GL /GS- /Oi /O1 /GA $(CFLAGS)
+LDFLAGS= /nologo /ignore:4217 /LTCG /NODEFAULTLIB:libcmt
+MODNAME=$(MODULE)-static
+!else
+CFLAGS = /nologo /DLUA_BUILD_AS_DLL /D_WIN32_WINNT=0x0603 /DLUA_COMPAT_5_3 /DLUA_ARCH=\"$(_ARCH)\" /DLUART_MINOR=$(LUART_MINOR) /DLUART_MAJOR=$(LUART_MAJOR) /DLUART_RELEASE=$(LUART_RELEASE) /I"$(LUART_PATH)\include" /I"." /I"./src/include" /MD /Gy /GF /GR- /GL /GS- /Oi /O1 /GA $(CFLAGS)
+LDFLAGS= /nologo /OPT:REF /OPT:ICF /LTCG /NODEFAULTLIB:libcmt
+MODNAME=$(MODULE)
+!endif
+PROGRESS= "■"
+!endif
+
+LIBS= $(LUALIB) gdi32.lib kernel32.lib user32.lib comctl32.lib
 RM= del /Q
 CP= copy /Y
 LD= link.exe
 
-#---- Uncomment to manually set LuaRT installation path 
-#LUART_PATH=
+all: infomodule $(MODNAME).dll
 
-!if "$(LUART_PATH)" == ""
-!message ** LuaRT is not installed on this computer.
-!message ** Please install it or set the LuaRT installation path manually in the Makefile
-!message
-!else
-
-!if "$(BUILD)" == "debug"
-CFLAGS = /nologo /D_WIN32_WINNT=0x0600 /DLUA_COMPAT_5_3 /I"$(LUART_PATH)\include" /I"." /Z7
-LDFLAGS= /nologo /DEBUG
-VERBOSE=
-!else
-CFLAGS = /nologo /D_WIN32_WINNT=0x0600 /DLUA_COMPAT_5_3 /DLUART_RELEASE=$(LUART_RELEASE) /I"$(LUART_PATH)\include" /I"." /MD /MD /Gy /Gw /GF /Oi /O2 /GA
-LDFLAGS= /nologo /OPT:REF /OPT:ICF
-!endif
-
-all: $(MODULE).dll
+static: 
+	@$(MAKE) /nologo "BUILD=static"
 
 debug:
 	@$(MAKE) /nologo "BUILD=debug"
 
 infomodule: 
 	@chcp 65001 >nul 2>&1
+!if "$(BUILD)" != "static"
 	@cmd /c echo.
-	@echo|set /p dummy="▸  Building module $(MODULE) $(VERSION)	  "
+	@echo|set /p dummy="▸  Building module $(MODNAME) $(VERSION)	  "
+!endif
 
 .c.obj: 
 	@$(CC) $(CFLAGS) /c /Fo$@ $< $(VERBOSE)
-
 	@echo|set /p dummy=$(PROGRESS)
 
-$(MODULE).dll: infomodule $(SRC)
-	@$(LD) /DLL $(LDFLAGS) $(SRC) $(LIBS) /OUT:$@ $(VERBOSE)
+.cpp.obj: 
+	@$(CC) $(CFLAGS) /c /Fo$@ $< $(VERBOSE)
+	@echo|set /p dummy=$(PROGRESS)
+
+$(MODNAME).dll: $(SRC)
+	@$(LD) /DLL $(LDFLAGS) $(LIBS) $(SRC) /OUT:$@ $(VERBOSE)
+	@$(RM) $(SRC)
+!if "$(BUILD)" != "static"
+	@$(MAKE) /nologo static
+!endif
 
 clean:
 	@echo|set /p dummy="▸  Cleaning $(MODULE) module... "
-	@$(RM) $(MODULE).* >nul 2>&1
+	@$(RM) $(MODULE)*.* >nul 2>&1
 	@$(RM) $(SRC) >nul 2>&1
 	@echo ✓
-
-!endif

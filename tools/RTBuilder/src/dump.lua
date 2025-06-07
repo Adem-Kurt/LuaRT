@@ -32,6 +32,9 @@ local function value2str(widget, propname, name)
         end
         result = result:sub(1, -2).." }"
     elseif t == "nil" then
+        if propname == "cursor" then
+            return "'arrow'"
+        end
         return "nil"
     elseif t == "boolean" then
         return tostring(value)
@@ -80,7 +83,7 @@ local function write_properties(file, widget, ancestor, name)
     for member in pairs(ancestor) do
         local propname = member:match("^set_(.*)")
         if propname ~= nil then
-            if widget ~= formWindow or propname ~= "visible" then
+            if  propname ~= "visible" then --widget ~= formWindow or
                 local value = value2str(widget, propname, name)
                 if propname:usearch("text") then
                     value = value:gsub("^'(.*)'$", function(str) return "[["..str.."]]" end)
@@ -170,13 +173,13 @@ function saveWindow()
     file:open("write")
     file:write('local ui = require "ui"')
     save(file, formWindow.name, formWindow)
-    local widgets = ", {"
+    local widgets = "{"
     table.sort(Widgets, function(a,b) local t = type(a); return t == "Groupbox" or t == "Tab" or t == "Panel" end)
     for name, w in pairs(Widgets) do
         widgets = widgets.." ['"..name.."'] = "..name..","
         save(file, name, w)
     end
-    file:writeln("return "..formWindow.name..widgets.." }")
+    file:writeln(string.format("return { Window = %s, Widgets = %s }", formWindow.name, widgets.." }"))
     file:close()
     filename = file.fullpath
     modified = false
@@ -200,14 +203,17 @@ function loadWindow(file)
     end })
     local func, err = loadfile(file.fullpath, "bt", { print = print, rtbuilder = mainWindow, File = function(f) return file.path..f end, require = function() return ui_module end })
     if not err then
-        local result, win, list = pcall(func)
-        if result and (type(win) == "Window") then
+        local result, gui = pcall(func)
+        if result and (type(gui) == "table") then
             if formWindow ~= nil then
                 formWindow:onClose()
             end
             sleep()  
-            formWindow = win
-            Widgets = list
+            formWindow = gui.Window
+            if formWindow.bgcolor == 0xF0F0F0 or formWindow.bgcolor == 0 then
+                formWindow.bgcolor = nil
+            end
+            Widgets = gui.Widgets
             loadWidgets()
             return file.fullpath
         end

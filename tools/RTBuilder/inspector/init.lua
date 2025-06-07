@@ -87,7 +87,11 @@ function inspector.Update(tracked)
             widget.update(tracked)
         end
     end
-    inspector.title = tracked.name.." properties"
+    if #tracked.name < 13 then
+        inspector.title = tracked.name.." properties"
+    else
+        inspector.title = tracked.name:sub(1,11).."... properties"
+    end
     inspector.height = panel.pos + 10
     panel:show()
     if tracked ~= formWindow then
