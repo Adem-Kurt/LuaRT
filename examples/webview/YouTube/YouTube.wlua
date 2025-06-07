@@ -17,6 +17,10 @@ function wv:onFullScreenChange(isfullscreen)
     win.fullscreen = isfullscreen
 end
 
+function wv:onThemeChange(isDark)
+    self:reload()
+end
+
 win:center()
 
 ui.run(win):wait()

@@ -181,6 +181,10 @@ function Edit:onCaret()
 	update_status()
 end
 
+function win:onThemeChange(isDark)
+	SettingsMenu.items[2].text = "Switch to "..(isDark and "light" or "dark").." theme"
+end
+
 Edit.onSelect = Edit.onChange
 
 -- Edit on right click event : shows EditMenu as a popup menu
