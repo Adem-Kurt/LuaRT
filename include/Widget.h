@@ -121,6 +121,7 @@ typedef struct _Widget {
 #define WM_LUAMINIMIZE   	(WM_LUAMIN + 24)
 #define WM_LUARESTORE    	(WM_LUAMIN + 25)
 #define WM_LUADROP    	    (WM_LUAMIN + 26)
+#define WM_LUATHEMECHANGE   (WM_LUAMIN + 27)
 
 typedef enum {
 	onHide			= WM_LUAHIDE,
@@ -150,6 +151,7 @@ typedef enum {
     onMinimize      = WM_LUAMINIMIZE,
     onRestore       = WM_LUARESTORE,
     onDrop          = WM_LUADROP,
+    onThemeChange   = WM_LUATHEMECHANGE,
 } WidgetEvent;
 
 //---- call event e associated with widget w

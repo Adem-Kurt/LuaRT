@@ -187,16 +187,6 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam) {
 				return r;
 		}
 		switch(Msg) {
-			case WM_SYSCOMMAND:
-				if (wParam == SC_MAXIMIZE)
-					lua_callevent(w, onMaximize);
-				else if (wParam == SC_MINIMIZE)
-					lua_callevent(w, onMinimize);
-				else if (wParam == SC_RESTORE) {
-					lua_callevent(w, onRestore);
-					InvalidateRect(hWnd, NULL, TRUE);
-				}
-				break;
 			case WM_COMMAND:
 				if (lParam) {
 					PostMessageW((HWND)lParam, WM_COMMAND, wParam, lParam);
@@ -292,6 +282,11 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam) {
 				PostQuitMessage(0);
 				return 0;
 			case WM_SIZE: {
+				switch (wParam)	{
+					case SIZE_MAXIMIZED:	lua_callevent(w, onMaximize); break;
+					case SIZE_RESTORED:		lua_callevent(w, onRestore); break;
+					case SIZE_MINIMIZED:	lua_callevent(w, onMinimize); break;
+				}
 				RECT sbRect;
 				UINT sbheight;				
 				if (w->status && IsWindowVisible(hWnd)) {
@@ -360,21 +355,18 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam) {
 				PAINTSTRUCT ps;
 				RECT rc;
 				HDC hdc = BeginPaint(hWnd, &ps);
-				HBRUSH b = w->brush;
-				if (w->wtype == UITab && DarkMode)
-					b = CreateSolidBrush(0x282828);
 				GetClientRect(hWnd, &rc);
-				FillRect(hdc, &rc, b);
-				if (b != w->brush)
-					DeleteObject(b);
+				FillRect(hdc, &rc, w->brush);
 				EndPaint(hWnd, &ps);
 				return FALSE;
 			};
 			case WM_SETTINGCHANGE:
 				if (IsDarkModeEnabled() != DarkMode) {
-					DarkMode = !DarkMode;
-					EnumThreadWindows(GetCurrentThreadId(), AdjustThemeProc, (LPARAM)DarkMode);
-				} break;
+					if (lParam && lParam != 1) {
+						DarkMode = !DarkMode;
+						EnumChildWindows(hWnd, AdjustThemeProc, (LPARAM)DarkMode);
+					}
+				} return 0;
 			case WM_CTLCOLOREDIT:	
 			case WM_CTLCOLORBTN:
 			case WM_CTLCOLORSTATIC: return WidgetProc(hWnd, Msg, wParam, lParam, (UINT_PTR)NULL, (DWORD_PTR)NULL);
@@ -443,7 +435,8 @@ LUA_CONSTRUCTOR(Window) {
 		case 2:		
 		default:	w->style = WS_CAPTION;
 	}	
-	AdjustWindowRectEx(&r, GetWindowLongPtr(w->handle, GWL_STYLE), FALSE, GetWindowLongPtr(w->handle, GWL_EXSTYLE));
+	if (style != 3)
+		AdjustWindowRectEx(&r, GetWindowLongPtr(w->handle, GWL_STYLE), FALSE, GetWindowLongPtr(w->handle, GWL_EXSTYLE));
 	SetWindowPos(w->handle, 0, 0, 0, r.right-r.left, r.bottom-r.top, SWP_HIDEWINDOW | SWP_NOMOVE);	
 	free(title); 
 	SetWindowLongPtr(w->handle, GWLP_USERDATA, (ULONG_PTR)w);
@@ -771,7 +764,8 @@ LUA_PROPERTY_GET(Window, parent) {
 //-------------------------------------[ Window.childs ]
 static BOOL CALLBACK EnumChilds(HWND h, LPARAM lParam) {
 	Widget *w = (Widget*)GetWindowLongPtr(h, GWLP_USERDATA);
-	if (w) {
+	WidgetType wtype = GetWidgetTypeFromHWND(h);
+	if ((wtype > -1) && w) {
 		lua_rawgeti((lua_State*)lParam, LUA_REGISTRYINDEX, w->ref);
 		lua_rawseti((lua_State*)lParam, -2, luaL_len((lua_State*)lParam, -2)+1);
 	}

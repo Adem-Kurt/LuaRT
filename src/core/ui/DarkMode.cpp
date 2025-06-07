@@ -84,7 +84,8 @@ extern "C" {
 			{WC_TABCONTROLW, UITab},
 			{WC_TREEVIEWW, UITree},
 			{WC_COMBOBOXEXW, UICombo},
-			{RICHEDIT_CLASSW, UIEdit}
+			{RICHEDIT_CLASSW, UIEdit},
+			{WC_LISTVIEWW, UIList},
 		};
 
 		if (GetClassNameW(h, classname, 64)) {
@@ -119,11 +120,14 @@ extern "C" {
 	void RefreshTitleBarThemeColor(HWND hWnd, BOOL dark)
 	{
 		if (g_buildNumber >= 17763) {
-			BOOL isvisible = IsWindowVisible(hWnd);
 			DwmSetWindowAttribute(hWnd, (int)(g_buildNumber > 18985 ? DWMWA_USE_IMMERSIVE_DARK_MODE : DWMWA_USE_IMMERSIVE_DARK_MODE_BEFORE_20H1), &dark, sizeof(int));					
-			SetWindowPos(hWnd, 0, 0, 0, 0, 0,  SWP_FRAMECHANGED | SWP_NOSIZE | SWP_NOMOVE | SWP_HIDEWINDOW);
-			if (isvisible)
-				SetWindowPos(hWnd, 0, 0, 0, 0, 0,  SWP_FRAMECHANGED | SWP_NOSIZE | SWP_NOMOVE | SWP_SHOWWINDOW);
+			SetWindowPos(hWnd, 0, 0, 0, 0, 0,  SWP_FRAMECHANGED | SWP_NOSIZE | SWP_NOMOVE);
+			RedrawWindow(hWnd, NULL, NULL, RDW_FRAME | RDW_INVALIDATE | RDW_ALLCHILDREN);
+			if (g_buildNumber >= 22000) {
+				int backdropType = DWMSBT_AUTO;
+				DwmSetWindowAttribute(hWnd, DWMWA_SYSTEMBACKDROP_TYPE, &backdropType, sizeof(int));
+			}
+			DwmFlush();
 		}
     }	
 
@@ -581,7 +585,8 @@ extern "C" {
 				drawTab(hwnd, hdc, nSelected, &ps, &rc, himl, TRUE, cx, cy);
 				MoveToEx(hdc, rc.right, rc.bottom-1, NULL);
 				LineTo(hdc, ps.rcPaint.right, rc.bottom-1);
-			} else Rectangle(hdc, ps.rcPaint.left, ps.rcPaint.top, ps.rcPaint.right, ps.rcPaint.bottom);
+			} else
+				Rectangle(hdc, ps.rcPaint.left, ps.rcPaint.top, ps.rcPaint.right, ps.rcPaint.bottom);
 			EndPaint(hwnd, &ps);
 		} else DefSubclassProc(hwnd, msg, wParam, lParam);
 		RECT r, rr;

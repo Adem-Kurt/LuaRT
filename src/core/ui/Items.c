@@ -67,13 +67,13 @@ extern LRESULT CALLBACK WindowProc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lP
 LRESULT CALLBACK PageProc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam) {
 	Widget *w = (Widget*)GetWindowLongPtr(hWnd, GWLP_USERDATA);
 	switch(Msg) {
-		case WM_ERASEBKGND:	{
-			RECT rect;
-			GetClientRect(hWnd, &rect);
-			FillRect((HDC)wParam, &rect, w->brush);
-			SendMessage(GetParent(w->handle), WM_ERASEBKGND, wParam, lParam);
-			return TRUE;
-		}
+		// case WM_ERASEBKGND:	{
+		// 	RECT rect;
+		// 	GetClientRect(hWnd, &rect);
+		// 	FillRect((HDC)wParam, &rect, w->brush);
+		// 	SendMessage(GetParent(w->handle), WM_ERASEBKGND, wParam, lParam);
+		// 	return TRUE;
+		// }
 		case WM_LBUTTONDOWN:lua_paramevent(w, onMouseDown, 0, MAKELPARAM(GET_X_LPARAM(lParam), AdjustTab_height(w)+GET_Y_LPARAM(lParam)));
 							lua_paramevent(w, onClick, GET_X_LPARAM(lParam), AdjustTab_height(w)+GET_Y_LPARAM(lParam));
 							SetFocus(hWnd);
@@ -107,6 +107,7 @@ LRESULT CALLBACK PageProc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam) {
 		case WM_LUADROP:
 			SendMessage(GetParent(w->handle), WM_LUADROP, wParam, lParam);
 			return FALSE;
+		case WM_SETTINGCHANGE: return 0;
 	}
 	return WindowProc(hWnd, Msg, wParam, lParam);
 }

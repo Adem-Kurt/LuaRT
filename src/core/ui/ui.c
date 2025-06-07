@@ -574,6 +574,9 @@ int do_update(lua_State *L)
 													lua_pushlstring(L, (const char*)&msg.lParam, 1);
 												else lua_pushstring(L, (const char *)msg.wParam);
 												break;
+							case WM_LUATHEMECHANGE:
+												lua_pushboolean(L, msg.wParam);
+												break;
 							case WM_LUADROP:	{
 													char *data = (char *)msg.wParam;
 													size_t size = (size_t)msg.lParam;										
@@ -1053,29 +1056,37 @@ static void UpdateListColor(Widget *w, HWND h, BOOL isDark) {
 
 BOOL CALLBACK AdjustThemeProc(HWND h, LPARAM isDark) {
 	Widget *w = (Widget*)GetWindowLongPtr(h, GWLP_USERDATA);
-	WidgetType wtype = w ? w->wtype : GetWidgetTypeFromHWND(h);
+	WidgetType wtype = GetWidgetTypeFromHWND(h);
+
 	if (wtype > -1) {
-		if (wtype == UIWindow) {
-			FlushMenuThemes();
-			AllowDarkModeForApp(isDark);
-			AllowDarkModeForWindow(h, isDark);
-			FixDarkScrollBar(isDark);
+		if ((wtype == UIWindow)) {
 			if (w) {
+				if (wtype != w->wtype)
+					goto panel;
+				HBRUSH lightbrush = GetSysColorBrush(COLOR_BTNFACE);
+				HBRUSH darkbrush = GetStockObject(BLACK_BRUSH);
 				if (isDark) {
-					w->brush = GetStockObject(BLACK_BRUSH);
+					if (w->brush == lightbrush)
+						w->brush = darkbrush;
 					if (w->status)
 						SetWindowSubclass(w->status, StatusProc, 4444, (DWORD_PTR)w);
 				} else {
-					w->brush = GetSysColorBrush(COLOR_BTNFACE);
+					if (w->brush == darkbrush)
+						w->brush = lightbrush;
 					if (w->status)
 						SendMessageW(w->status, WM_NCACTIVATE, TRUE, 0);
 					if (w->status)
 						RemoveWindowSubclass(w->status, StatusProc, 4444);
 				}
-				SetClassLongPtr(h, GCLP_HBRBACKGROUND, (LONG_PTR)w->brush);
+				SetClassLongPtr(h, GCLP_HBRBACKGROUND, (LONG_PTR)w->brush);		
+				FlushMenuThemes();
+				AllowDarkModeForApp(isDark);
+				AllowDarkModeForWindow(h, isDark);
+				FixDarkScrollBar(isDark);
+				RefreshTitleBarThemeColor(h, isDark);
+				lua_paramevent(w, onThemeChange, isDark, 0);
+				EnumChildWindows(h, AdjustThemeProc, isDark);
 			}
-			EnumChildWindows(h, AdjustThemeProc, isDark);
-			RefreshTitleBarThemeColor(h, isDark);
 		} else if (wtype == UIEdit) {
 			CHARFORMAT2W cf = {0};
 			cf.cbSize = sizeof(CHARFORMAT2W);
@@ -1094,6 +1105,8 @@ color:		if (isDark) {
 				if (w->color == 0xFFFFFF)
 					w->color = 0;
 			}
+			if (w->status)
+				SendMessage(h, STM_SETIMAGE, (WPARAM)IMAGE_BITMAP, (LPARAM)w->status);
 		} else if (wtype == UIProgressbar) {
 			w->index = !isDark;
 			if (isDark) {
@@ -1118,8 +1131,13 @@ color:		if (isDark) {
 				SetWindowTheme(h, L"Explorer", NULL);
 				SendMessage(h, MCM_SETCOLOR, MCSC_BACKGROUND, 0xFFFFFF);
 			}
-		} else if (wtype == UIPanel)
-			w->brush = isDark ? DARK_BRUSH : GetSysColorBrush(COLOR_BTNFACE);
+		} else if (wtype == UIPanel) {
+panel:					
+			if (!w->brush || w->brush == DARK_BRUSH || w->brush == GetSysColorBrush(COLOR_BTNFACE))
+				w->brush = isDark ? DARK_BRUSH : GetSysColorBrush(COLOR_BTNFACE);
+			if (w->wtype > UIPanel)
+				goto dispatch;
+		}
 		else if (wtype == UIEntry) {
 			SetWindowTheme(h, isDark ? L"DarkMode_CFD" : L"Explorer", NULL);
 			if (!w)
@@ -1136,7 +1154,7 @@ color:		if (isDark) {
 		} else if (wtype == UICombo) {
 			SetWindowTheme(h, L"Explorer", NULL);
 			AllowDarkModeForWindow(h, TRUE);
-			SendMessage(h, CBEM_SETWINDOWTHEME, 0, (LPARAM)L"Explorer");//(isDark ? L"DarkMode_Explorer": L"Explorer"));
+			SendMessage(h, CBEM_SETWINDOWTHEME, 0, (LPARAM)L"Explorer");
 			SendMessage(h, WM_THEMECHANGED, 0, 0);
 			HWND cb = (HWND)SendMessageW(w->handle, CBEM_GETCOMBOCONTROL, 0, 0);
 			if (isDark)
@@ -1159,7 +1177,7 @@ color:		if (isDark) {
 			}
 		} else if (w && wtype == UITab) {
 			if (isDark)
-				w->brush = CreateSolidBrush(0x282828);
+				w->brush = DARK_BRUSH;
 			else {
 				HTHEME hTheme = OpenThemeData(h, L"Tab");
 				COLORREF color;
@@ -1189,9 +1207,13 @@ color:		if (isDark) {
 			}
 			if (w->item.iconstyle)
 				SetWindowLong(h, GWL_STYLE, GetWindowLongPtr(h, GWL_STYLE) & ~TVS_HASLINES);
+		} else {
+dispatch:			
+			SendMessageW(h, WM_SETTINGCHANGE, (WPARAM)NULL, isDark);
+			return TRUE;
 		}
 		RedrawWindow(h, NULL, NULL, RDW_FRAME | RDW_INVALIDATE | RDW_ERASENOW | RDW_ERASE | RDW_ALLCHILDREN);
-		SetWindowPos(h, NULL, 0, 0, 0, 0, (w && w->wtype != UIWindow ? SWP_SHOWWINDOW : 0) | SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_FRAMECHANGED);
+		SetWindowPos(h, NULL, 0, 0, 0, 0, SWP_SHOWWINDOW | SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_FRAMECHANGED);
 	}
 	return TRUE;
 }
@@ -1200,7 +1222,7 @@ LUA_PROPERTY_SET(ui, theme) {
 	if (g_darkModeSupported) {
 		int i = luaL_checkoption(L, 1, NULL, themes);
 		if (i != DarkMode) {
-			DarkMode = i;		
+			DarkMode = i;					
 			EnumThreadWindows(GetCurrentThreadId(), AdjustThemeProc, (LPARAM)i);
 		}
 	}
@@ -1310,7 +1332,7 @@ extern int luaopen_ui(lua_State *L) {
 	lua_setfield(L, LUA_REGISTRYINDEX, "MenuItem");
 	if (FAILED(CoCreateInstance(&CLSID_WICImagingFactory, NULL, CLSCTX_INPROC_SERVER, &IID_IWICImagingFactory, (LPVOID*)&ui_factory)))
         luaL_error(L, "Failed to open 'ui' module : WIC Imaging Factory could not be created");
-	DARK_BRUSH = CreateSolidBrush(0x181818);			
+	DARK_BRUSH = CreateSolidBrush(0x282828);			
 	CBDARK_BRUSH = CreateSolidBrush(0x383838);			
 	lua_widgetconstructor = Widget__constructor;
 	lua_widgetinitialize = Widget_init;

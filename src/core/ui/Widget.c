@@ -25,7 +25,7 @@ const char *luart_wtypes[] = {
 };
 
 const char *events[] = {
-	"onHide", "onShow", "onMove", "onResize", "onHover", "onLeave", "onClose", "onClick", "onDoubleClick", "onContext", "onCreate", "onCaret", "onChange", "onSelect", "onTrayClick", "onTrayDoubleClick", "onTrayContext", "onTrayHover", "onNotificationClick", "onClick", "onKey", "onMouseUp", "onMouseDown", "onMaximize", "onMinimize", "onRestore", "onDrop", NULL };
+	"onHide", "onShow", "onMove", "onResize", "onHover", "onLeave", "onClose", "onClick", "onDoubleClick", "onContext", "onCreate", "onCaret", "onChange", "onSelect", "onTrayClick", "onTrayDoubleClick", "onTrayContext", "onTrayHover", "onNotificationClick", "onClick", "onKey", "onMouseUp", "onMouseDown", "onMaximize", "onMinimize", "onRestore", "onDrop", "onThemeChange", NULL };
 
 const char *cursors[] = {
 	"arrow", "working", "cross", "hand", "help", "ibeam", "forbidden", "cardinal", "horizontal", "vertical", "leftdiagonal", "rightdiagonal", "up", "wait", "none", NULL
@@ -85,7 +85,7 @@ void page_resize(Widget *w, BOOL isfocused) {
 		y = rr.bottom-rr.top+3+dpi;
 	} else y = 24.25*dpi; 
 	GetClientRect(w->handle, &r);
-	int width = r.right-r.left-(DarkMode ? 1 : 2)*dpi;
+	int width = r.right-r.left-3*dpi;
 	int height = r.bottom-r.top-y-dpi;
 	if (w->user) {
 		SetWindowPos(w->user, NULL, 1, y, width, height, SWP_NOZORDER);
@@ -300,7 +300,7 @@ notify:		if ((w->wtype == UIEdit) && (lpNmHdr->code == EN_SELCHANGE)) {
 			}
 			return 0;
 		case WM_CONTEXTMENU:
-			if (((w->wtype < UIList) || (w->wtype >> UITab)) || (wParam == 0)) {
+			if (((w->wtype < UIList) || (w->wtype > UITab)) || (wParam == 0)) {
 				lua_indexevent(w, onContext, 0);
 				return TRUE;
 			}
@@ -792,7 +792,8 @@ LUA_PROPERTY_SET(Widget, hastext) {
 		SetWindowTextA(w->handle, "");
 	} else {
 		SetWindowPlacement(w->handle, &w->wp);
-		SetWindowTextW(w->handle, w->user);
+		if (w->user)
+			SetWindowTextW(w->handle, w->user);
 	}
 	UpdateWindow(GetParent(w->handle));
 	return 1;		
@@ -841,7 +842,8 @@ int size(Widget *widget, lua_State *L, int offset_from, int offset_to, BOOL set,
 				r.right = floor(value);
 			else
 				r.bottom = floor(value);
-			AdjustWindowRectEx(&r, GetWindowLongPtr(h, GWL_STYLE), FALSE, GetWindowLongPtr(h, GWL_EXSTYLE));
+			if (w->style != WS_OVERLAPPEDWINDOW)
+				AdjustWindowRectEx(&r, GetWindowLongPtr(h, GWL_STYLE), FALSE, GetWindowLongPtr(h, GWL_EXSTYLE));
 			len = (*(LONG*)(((char*)&r)+offset_from))-(*(LONG*)(((char*)&r)+offset_to));
 		} else if (w->autosize)
 			w->autosize = FALSE;
@@ -851,9 +853,8 @@ int size(Widget *widget, lua_State *L, int offset_from, int offset_to, BOOL set,
 		RedrawWindow(GetParent(h), NULL, NULL, RDW_ERASE | RDW_FRAME | RDW_INVALIDATE | RDW_ALLCHILDREN);
 		GetWindowPlacement(h, &w->wp);
 	}
-	else {
+	else
 		lua_pushinteger(L, floor(len/GetDPIForSystem()));
-	}
 	return 1;
 }
 
