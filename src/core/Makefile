@@ -51,7 +51,7 @@ _ARCH = x86
 #---- LuaRT version
 LUART_MAJOR= 2
 LUART_MINOR= 0
-LUART_RELEASE= 0
+LUART_RELEASE= 1
 !if "$(VERSION)" == ""
 VERSION=$(LUART_MAJOR).$(LUART_MINOR).$(LUART_RELEASE)
 !endif
@@ -271,8 +271,9 @@ buildtools: clean $(RTC_T)
 setup: buildtools infosetup
 	@..\..\bin\luart.exe makedist.lua $(VERSION) $(PLATFORM)
 	@echo|set /p dummy=$(PROGRESS)
+	@-signtool.exe sign /n "Open Source Developer, Samir Tine" /fd SHA256 LuaRT-$(VERSION)-$(PLATFORM).exe >nul 2>&1
+	@..\..\bin\luart.exe -e "z = require('compression').Zip('LuaRT-$(VERSION)-$(PLATFORM).zip', 'write'); z:write('LuaRT-$(VERSION)-$(PLATFORM).exe'); z:close(); sys.File('LuaRT-$(VERSION)-$(PLATFORM).exe'):remove()" >nul 2>&1
 	@-move /Y LuaRT-$(VERSION)-$(PLATFORM).zip ..\..\LuaRT-$(VERSION)-$(PLATFORM).zip >nul 2>&1
-	@-move /Y LuaRT-$(VERSION)-$(PLATFORM).exe ..\..\LuaRT-$(VERSION)-$(PLATFORM).exe >nul 2>&1
 	@cmd /c echo.
 
 clean: utf8
@@ -289,6 +290,7 @@ clean: utf8
 	@-$(RM) ..\..\bin\*.pdb >nul 2>&1
 	@-$(RM) ..\..\bin\*.exp >nul 2>&1
 	@-$(RM) ..\..\bin\*.lib >nul 2>&1
+	@-$(RM) ..\..\bin\*.ilk >nul 2>&1
 	@-$(RM) lua54.* >nul 2>&1
 	@-$(RM) resource.res >nul 2>&1
 	@-$(RM) ..\..\lib\lua54.lib >nul 2>&1

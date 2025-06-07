@@ -117,12 +117,5 @@ file_add("../../setup/install.wlua", "local VERSION = '"..VERSION.."'")
 local exe = 'LuaRT-'..VERSION..'-'..PLATFORM
 sys.cmd('..\\..\\bin\\rtc.exe -i "resources/box.ico" -s -w -o "'..exe..'.exe" ../../setup/install.wlua ../../setup >nul')
 
-if not sys.env.GITHUB_ACTIONS then
-    local compressed = compression.Zip(exe..".zip", "write")
-    compressed:write(exe..".exe")
-    compressed:close()
-    sys.File(exe..'.exe'):remove()
-    console.write("■")
-end
 
 dist:removeall()
