@@ -181,7 +181,7 @@ LUA_CONSTRUCTOR(Tracker) {
   double dpi;
   BOOL isdark;
 	lua_widgetinitialize(L, &wp, &dpi, &isdark);
-  w = lua_widgetconstructor(L, CreateWindowExW(0, L"Window", NULL, WS_CHILD, 0, 0, 0, 0, wp->handle, NULL, GetModuleHandle(NULL), NULL), TTracker, wp, TrackerProc);
+  w = lua_widgetconstructor(L, CreateWindowExW(WS_EX_COMPOSITED, L"Window", NULL, WS_CHILD | WS_CLIPCHILDREN | WS_CLIPSIBLINGS, 0, 0, 0, 0, wp->handle, NULL, GetModuleHandle(NULL), NULL), TTracker, wp, TrackerProc);
   return 1;
 }
 
