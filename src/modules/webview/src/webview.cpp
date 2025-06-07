@@ -27,12 +27,24 @@ using namespace Microsoft::WRL;
 static luart_type TWebview;
 HANDLE URIEvent;
 LPWSTR URI;
-UINT onReady, onMessage, onLoaded, onFullscreen;
+UINT onReady, onMessage, onLoaded, onFullscreen, _onThemeChange;
 
 //--- Webview procedure
 LRESULT CALLBACK WebviewProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam, UINT_PTR uIdSubclass, DWORD_PTR dwRefData) {
 	if (uMsg == WM_SIZE)
-		(static_cast<WebviewHandler*>(((Widget *)GetWindowLongPtr(hwnd, GWLP_USERDATA))->user))->Resize();
+		(static_cast<WebviewHandler*>(((Widget *)GetWindowLongPtrA(hwnd, GWLP_USERDATA))->user))->Resize();
+	else if ((uMsg == WM_SETTINGCHANGE)) {
+		WebviewHandler *wv = (WebviewHandler*)((Widget*)GetWindowLongPtrA(hwnd, GWLP_USERDATA))->user;
+		if (wv->webview3) {
+			ICoreWebView2Profile *profile;
+			if (SUCCEEDED(wv->webview3->get_Profile(&profile))) {
+				profile->put_PreferredColorScheme(lParam ? COREWEBVIEW2_PREFERRED_COLOR_SCHEME_DARK : COREWEBVIEW2_PREFERRED_COLOR_SCHEME_LIGHT);
+				profile->Release();
+				PostMessage(hwnd, _onThemeChange, 0, lParam);
+			}
+		}
+		return 0;
+	}
 	return lua_widgetproc(hwnd, uMsg, wParam, lParam, 0, 0);
 }
 
@@ -55,7 +67,6 @@ LUA_CONSTRUCTOR(Webview)
 	int i = lua_istable(L, 3) ? 4 : 3;
     HWND h, hParent = (HWND)lua_widgetinitialize(L, &wp, &dpi, &isdark);     
     h = CreateWindowExW(0, L"Window", NULL, WS_VISIBLE | WS_CHILD, (int)luaL_optinteger(L, i, 0)*dpi, (int)luaL_optinteger(L, i+1, 0)*dpi, (int)luaL_optinteger(L, i+2, 320)*dpi, (int)luaL_optinteger(L, i+3, 240)*dpi, hParent, 0, GetModuleHandle(NULL),  NULL);
-	
 	wv = i == 3 ? new WebviewHandler(h, "", NULL) : new WebviewHandler(h, get_argstrfield(L, "url", ""), get_argstrfield(L, "options", ""));
     w = lua_widgetconstructor(L, h, TWebview, wp, (SUBCLASSPROC)WebviewProc);
     w->user = wv;
@@ -670,12 +681,18 @@ int event_onMessage(lua_State *L, Widget *w, MSG *msg) {
 	return lua_throwevent(L, "onMessage", 2);
 }
 
+int event__onThemeChange(lua_State *L, Widget *w, MSG *msg) {
+	lua_pushboolean(L, msg->lParam);
+	return lua_throwevent(L, "onThemeChange", 2);
+}
+
 extern "C" {
 	extern int __declspec(dllexport) luaopen_webview(lua_State *L) {
 		onReady = lua_registerevent(L, NULL, event_onReady);
 		onMessage = lua_registerevent(L, NULL, event_onMessage);
 		onLoaded = lua_registerevent(L, NULL, event_onLoaded);
 		onFullscreen = lua_registerevent(L, NULL, event_onFullscreen);
+		_onThemeChange = lua_registerevent(L, NULL, event__onThemeChange);	
 		luaL_require(L, "ui");
 		lua_regwidgetmt(L, Webview, WIDGET_METHODS, FALSE, FALSE, FALSE, FALSE, FALSE);
 		luaL_setrawfuncs(L, Webview_methods);

@@ -75,12 +75,19 @@ WebviewHandler::WebviewHandler(HWND h, const char *URL, const char *args) {
 					if (FAILED(result))
 						return E_FAIL;
 					EventRegistrationToken uritoken, msgtoken, navigtoken, fullscreentoken;
+					ICoreWebView2Profile *profile; 
 					this->controller = controller;
 					this->controller->AddRef();
 					this->controller->get_CoreWebView2(&this->webview2);
 					this->webview2->AddRef();
 					this->webview2->QueryInterface(IID_ICoreWebView2_17, (void**)&this->webview3);
 					this->webview2->AddWebResourceRequestedFilter(NULL, COREWEBVIEW2_WEB_RESOURCE_CONTEXT_ALL);
+					if (SUCCEEDED(this->webview3->get_Profile(&profile))) {
+						BOOL isDark;
+						lua_uigetinfo(NULL, &isDark);
+						profile->put_PreferredColorScheme(isDark ? COREWEBVIEW2_PREFERRED_COLOR_SCHEME_DARK : COREWEBVIEW2_PREFERRED_COLOR_SCHEME_LIGHT);
+						profile->Release();						
+					}
 					//--- onWebMessageReceived event
 					this->webview2->add_WebMessageReceived(Callback<ICoreWebView2WebMessageReceivedEventHandler>(
 						[this](ICoreWebView2* sender, ICoreWebView2WebMessageReceivedEventArgs* args) -> HRESULT {
