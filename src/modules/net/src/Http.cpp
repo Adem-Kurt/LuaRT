@@ -99,7 +99,21 @@ static void ProcessRequest(Http *h, DWORD *error) {
                         *error = GetLastError();
                     break;                
                     
-                case REQ_STATE_RESPONSE_RECV_DATA:                                 
+                case REQ_STATE_RESPONSE_RECV_DATA:   
+                    DWORD statusCode = 0, statusLen = sizeof(statusCode);
+
+                    if (!HttpQueryInfoA(h->hRequest, HTTP_QUERY_STATUS_CODE | HTTP_QUERY_FLAG_NUMBER, &statusCode, &statusLen, NULL)) {
+                        *error = GetLastError();
+                        break;
+                    }
+
+                    if (statusCode == 204) {
+                        h->state = REQ_STATE_COMPLETE;
+                        h->done = true;
+                        h->started = GetTickCount() - h->started;
+                        goto done;
+                    }
+                                
                     DWORD len;
                     INTERNET_BUFFERS ib;
 
