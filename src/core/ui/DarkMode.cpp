@@ -122,7 +122,7 @@ extern "C" {
 		if (g_buildNumber >= 17763) {
 			DwmSetWindowAttribute(hWnd, (int)(g_buildNumber > 18985 ? DWMWA_USE_IMMERSIVE_DARK_MODE : DWMWA_USE_IMMERSIVE_DARK_MODE_BEFORE_20H1), &dark, sizeof(int));					
 			SetWindowPos(hWnd, 0, 0, 0, 0, 0,  SWP_FRAMECHANGED | SWP_NOSIZE | SWP_NOMOVE);
-			RedrawWindow(hWnd, NULL, NULL, RDW_FRAME | RDW_INVALIDATE | RDW_ALLCHILDREN);
+			RedrawWindow(hWnd, NULL, NULL, RDW_FRAME | RDW_INVALIDATE | RDW_ALLCHILDREN | RDW_UPDATENOW);
 			if (g_buildNumber >= 22000) {
 				int backdropType = DWMSBT_AUTO;
 				DwmSetWindowAttribute(hWnd, DWMWA_SYSTEMBACKDROP_TYPE, &backdropType, sizeof(int));

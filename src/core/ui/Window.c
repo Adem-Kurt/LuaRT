@@ -364,7 +364,7 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam) {
 				if (IsDarkModeEnabled() != DarkMode) {
 					if (lParam && lParam != 1) {
 						DarkMode = !DarkMode;
-						EnumChildWindows(hWnd, AdjustThemeProc, (LPARAM)DarkMode);
+						AdjustThemeProc(hWnd, DarkMode);	
 					}
 				} return 0;
 			case WM_CTLCOLOREDIT:	
