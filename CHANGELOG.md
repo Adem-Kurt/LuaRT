@@ -1,4 +1,4 @@
-## LuaRT v2.0.1 (June 06 2025)
+## LuaRT v2.0.1 (June 08 2025)
 
 #### Highlights 
 - Bugfix release for LuaRT 2.0.1
