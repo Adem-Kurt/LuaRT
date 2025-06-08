@@ -1,3 +1,34 @@
+## LuaRT v2.0.1 (June 06 2025)
+
+#### Highlights 
+- Bugfix release for LuaRT 2.0.1
+- New `onThemeChange` method for `Window` and `Webview` widgets
+
+#### RTBuilder
+- Fixed some ui glitches, but the problem may still occur at times (still investigating)
+- Fixed various themes related bugs
+- Fixed Window loading bug
+- Fixed cursor property bug
+- Fixed widget name bug with non authorized characters
+
+#### net module
+- Http requests with 204 status code won't return an error anymore
+
+#### serial module
+- Fixed: Writing to serial port won't crash anymore
+
+#### ui module
+- New: `Window:onThemeChange()` event when the Windows theme have been changed
+- Fixed: Events for Window maximize/restore/minimize are now fired as expected
+- Fixed: "raw" styled Window not returns correct width and height values
+- Fixed: `Windous graphical bugs when switching themes have been fixed
+- Updated YouTw.childs` property won't crash 
+- Fixed: notepad.wlua example to take in count Windows theme changes 
+
+#### webview module
+- New: `Webview:onThemeChange()` event when the Windows theme have been changed
+- Updated YouTube.wlua example to take in count Windows theme changes 
+
 ## LuaRT v2.0.0 (May 10 2025)
 
 #### Highlights 
