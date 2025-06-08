@@ -1,4 +1,4 @@
-﻿local VERSION = '2.0.0'
+﻿local VERSION = '2.0.1'
 --[[
     | LuaRT - A Windows programming framework for Lua
     | Luart.org, Copyright (c) Tine Samir 2023.
@@ -32,7 +32,7 @@ elseif ui.dpi >= 1.75 then
     factor = 2
 end
 
-local win = ui.Window("", "raw", 400, math.floor(155*factor))
+local win = ui.Window("", "raw", 400, math.floor(200*factor))
 win.bgcolor = ui.theme == "light" and 0xFFFFFF or 0
 win.font = "Segoe UI"
 win.installation = false

@@ -1,4 +1,4 @@
-﻿local VERSION = '2.0.0'
+﻿local VERSION = '2.0.1'
 
 --[[
     | LuaRT - A Windows programming framework for Lua
@@ -24,7 +24,7 @@ elseif ui.dpi >= 1.75 then
     factor = 2
 end
 
-local win = ui.Window("", "raw", 400, math.floor(155*factor))
+local win = ui.Window("", "raw", 400, math.floor(230*factor))
 win.font = "Segoe UI"
 win.installation = false
 
@@ -139,17 +139,17 @@ function button:onClick()
         label.fgcolor = ui.theme == "light" and 0x002A5A or 0xEFB42C
         local bar = ui.Progressbar(win)
         bar.width = win.width-80
-        bar:center()
-        label.x = bar.x
-        label.width = bar.width
-        bar.y = 150*factor
-        label.y = bar.y + bar.height + 3
-        bar.position = 75
         bar.themed = false
         bar.fgcolor = 0xEFB42C
         bar.bgcolor = win.bgcolor
+        bar:center()
         self:hide()
         ui.update()
+        bar.y = 150*factor
+        label.x = bar.x
+        label.width = bar.width
+        label.y = bar.y + bar.height + 3
+        bar.position = 0
         local archive = compression.Zip(File("luaRT.zip"))
         bar.range = {0, archive.count}
         local size = 0
