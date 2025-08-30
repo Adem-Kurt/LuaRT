@@ -70,19 +70,19 @@ LUA_PROPERTY_GET(Task, expired) {
 
 //----------------------------------[ Task.timeout property ]
 LUA_PROPERTY_SET(Task, timeout) {
-	lua_self(L, 1, Task)->timeout = luaL_checkinteger(L, 2);
-	return 1;
+	lua_self(L, 1, Task)->timeout = GetTickCount64() + luaL_checkinteger(L, 2);
+	return 0;
 }
 
 LUA_PROPERTY_GET(Task, timeout) {
-	lua_pushinteger(L, lua_self(L, 1, Task)->timeout);
+	lua_pushinteger(L, lua_self(L, 1, Task)->timeout - GetTickCount64());
 	return 1;
 }
 
 //----------------------------------[ Task.priority property ]
 LUA_PROPERTY_SET(Task, priority) {
 	lua_self(L, 1, Task)->priority = luaL_checkinteger(L, 2);
-	return 1;
+	return 0;
 }
 
 LUA_PROPERTY_GET(Task, priority) {
