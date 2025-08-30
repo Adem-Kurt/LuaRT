@@ -48,7 +48,7 @@ static const char *interpolation[] = { "nearest", "linear", NULL};
 LUA_METHOD(Image, draw) {
     Image *img = lua_self(L, 1, Image);
     double dpi;
-    lua_uigetinfo(&dpi, NULL);
+    ui->lua_uigetinfo(&dpi, NULL);
     const D2D1_SIZE_U size = img->Bitmap->GetPixelSize();
     float x = static_cast<FLOAT>(luaL_checknumber(L, 2));
     float y = static_cast<FLOAT>(luaL_checknumber(L, 3));

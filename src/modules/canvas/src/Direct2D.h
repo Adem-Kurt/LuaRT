@@ -28,7 +28,7 @@ public:
 
 	ID2D1Factory            *Factory{};
     D2D1::Matrix3x2F        transform = D2D1::Matrix3x2F::Identity();
-	IWICImagingFactory      *WICFactory;
+	IWICImagingFactory2     *WICFactory;
     IDWriteFactory          *DWriteFactory;
     ID2D1HwndRenderTarget   *DCRender;
     ID2D1SolidColorBrush    *colorBrush;

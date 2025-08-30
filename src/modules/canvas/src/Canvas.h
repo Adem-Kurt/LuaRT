@@ -13,6 +13,9 @@
 
 #include <dwrite.h>
 
+extern UIInterface *ui;
+extern luart_type TWidget;
+
 #define GetA(c)((float)((c) & 0xff))
 #define GetB(c)((float)((c >> 8) & 0xff))
 #define GetG(c)((float)((c >> 16) & 0xff))

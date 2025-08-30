@@ -11,11 +11,18 @@
 #include <windows.h>
 #include <windowsx.h>
 #include <math.h>
+#include <wrl/client.h>
 
 #include "Direct2D.h"
 #include "Canvas.h"
 #include "Image.h"
 #include "Gradient.h"
+
+using namespace Microsoft::WRL;
+
+
+UIInterface *ui = NULL;
+luart_type TWidget = 0;
 
 //--- Canvas type
 luart_type TCanvas;
@@ -77,11 +84,21 @@ LRESULT CALLBACK CanvasProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam, 
 
       case WM_MOUSEMOVE:
         PostMessage(hwnd, on_Hover, wParam, lParam);
+        break;
+
+      case WM_MOUSELEAVE:
+        lua_callevent(w, onLeave);
         return 0;
 
       case WM_LBUTTONUP:
+        wParam |= MK_LBUTTON;
+        goto process_up;
       case WM_MBUTTONUP:
+        wParam |= MK_LBUTTON;
+        goto process_up;
       case WM_RBUTTONUP:
+        wParam |= MK_RBUTTON;
+process_up:
         PostMessage(hwnd, on_MouseUp, wParam, lParam);
         return 0;
       case WM_SHOWWINDOW:
@@ -90,10 +107,14 @@ LRESULT CALLBACK CanvasProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam, 
         break;
       case WM_RBUTTONDOWN:
         PostMessage(hwnd, onContext, 0, 0);
+        wParam |= MK_RBUTTON;
         goto process_event;
       case WM_LBUTTONDOWN:
         PostMessage(hwnd, on_MouseClick, wParam, lParam);
+        wParam |= MK_LBUTTON;
+        goto process_event;
       case WM_MBUTTONDOWN:
+        wParam |= MK_MBUTTON;
 process_event:
         PostMessage(hwnd, on_MouseDown, wParam, lParam);
         return 0;
@@ -102,7 +123,7 @@ process_event:
         return 0;
       }
   }
-  return lua_widgetproc(hwnd, uMsg, wParam, lParam, 0, 0);
+  return ui->lua_widgetproc(hwnd, uMsg, wParam, lParam, 0, 0);
 }
 
 //------------------------------------ Canvas constructor
@@ -127,11 +148,11 @@ LUA_CONSTRUCTOR(Canvas)
   Widget *w, *wp;
   double dpi;
   BOOL isdark;
-  HWND h, hParent = (HWND)lua_widgetinitialize(L, &wp, &dpi, &isdark);
+  HWND h, hParent = (HWND)ui->lua_widgetinitialize(L, &wp, &dpi, &isdark);
 	int width = (int)luaL_optinteger(L, 5, 320)*dpi, height = (int)luaL_optinteger(L, 6, 240)*dpi;
 
   h = CreateWindowExW(WS_EX_NOREDIRECTIONBITMAP, L"Window", NULL, WS_CHILD | WS_VISIBLE, (int)luaL_optinteger(L, 3, 0)*dpi, (int)luaL_optinteger(L, 4, 0)*dpi, width, height, hParent, 0, GetModuleHandle(NULL), NULL);    
-  w = lua_widgetconstructor(L, h, TCanvas, wp, (SUBCLASSPROC)CanvasProc);
+  w = ui->lua_widgetconstructor(L, h, TCanvas, wp, (SUBCLASSPROC)CanvasProc);
 	w->user = new Direct2D(h, width, height);
 	if (((Direct2D *)w->user)->error)
 	  luaL_error(L, ((Direct2D *)w->user)->error); 
@@ -145,7 +166,7 @@ LUA_CONSTRUCTOR(Canvas)
 }
 
 LUA_METHOD(Canvas, __gc) {
-  Widget *w = lua_widgetdestructor(L);
+  Widget *w = ui->lua_widgetdestructor(L);
   delete (Direct2D*)w->user;
   w->user = NULL;
   free(w);
@@ -155,7 +176,7 @@ LUA_METHOD(Canvas, __gc) {
 static ID2D1Brush *getBrush(lua_State *L, Direct2D *d, int idx, double *dpi) {
   ID2D1Brush *brush = NULL;
   
-  lua_uigetinfo(dpi, NULL);
+  ui->lua_uigetinfo(dpi, NULL);
   if (lua_gettop(L) >= idx)
     switch(lua_type(L, idx)) {
       case LUA_TNUMBER: {
@@ -307,7 +328,7 @@ static IDWriteTextLayout *prepare_text(lua_State *L, Direct2D **d, double *dpi) 
 	FLOAT dpix, dpiy;
 	RECT re;
 
-  lua_uigetinfo(dpi, NULL);
+  ui->lua_uigetinfo(dpi, NULL);
   const D2D1_SIZE_F size = (*d)->DCRender->GetSize(); 
 	(*d)->DWriteFactory->CreateTextLayout(str, len+1, (*d)->textFormat, size.width, size.height, &layout);
   free(str);
@@ -353,7 +374,7 @@ LUA_METHOD(Canvas, rotate) {
   D2D1_POINT_2F center;
   double dpi;
 
-  lua_uigetinfo(&dpi, NULL);
+  ui->lua_uigetinfo(&dpi, NULL);
   if (lua_gettop(L) == 2) {
     const D2D1_SIZE_F& size = d->DCRender->GetSize();
     center = D2D1::Point2F(size.width / 2.0f, size.height / 2.0f);
@@ -368,7 +389,7 @@ LUA_METHOD(Canvas, scale) {
   D2D1_POINT_2F center;
   double dpi;
 
-  lua_uigetinfo(&dpi, NULL);
+  ui->lua_uigetinfo(&dpi, NULL);
   if (lua_gettop(L) == 3) {
     const D2D1_SIZE_F& size = d->DCRender->GetSize();
     center = D2D1::Point2F(size.width / 2.0f, size.height / 2.0f);
@@ -382,7 +403,7 @@ LUA_METHOD(Canvas, translate) {
   Direct2D *d = (Direct2D*)(lua_self(L, 1, Widget)->user);
   double dpi;
 
-  lua_uigetinfo(&dpi, NULL);
+  ui->lua_uigetinfo(&dpi, NULL);
   d->transform = d->transform * D2D1::Matrix3x2F::Translation(static_cast<FLOAT>(luaL_checknumber(L, 2)), static_cast<FLOAT>(luaL_checknumber(L, 3)));
   d->DCRender->SetTransform(d->transform);
 	return 0;
@@ -393,7 +414,7 @@ LUA_METHOD(Canvas, skew) {
   D2D1_POINT_2F center;
   double dpi;
   
-  lua_uigetinfo(&dpi, NULL);
+  ui->lua_uigetinfo(&dpi, NULL);
   if (lua_gettop(L) == 3) {
     const D2D1_SIZE_F& size = d->DCRender->GetSize();
     center = D2D1::Point2F(size.width / 2.0f, size.height / 2.0f);
@@ -557,6 +578,84 @@ LUA_METHOD(Canvas, flip) {
   return 0;
 }
 
+GUID GetWICContainerFormatFromExtension(const wchar_t* filename, GUID* pPixelFormat)
+{
+	const wchar_t* ext = wcsrchr(filename, L'.');
+	*pPixelFormat = GUID_WICPixelFormat32bppBGRA;
+
+    if (ext) {
+        if (_wcsicmp(ext, L".jpg") == 0 || _wcsicmp(ext, L".jpeg") == 0) {
+            *pPixelFormat = GUID_WICPixelFormat24bppBGR;
+            return GUID_ContainerFormatJpeg;
+        } else if (_wcsicmp(ext, L".bmp") == 0) {
+            *pPixelFormat = GUID_WICPixelFormat24bppBGR;
+            return GUID_ContainerFormatBmp;
+        } else if (_wcsicmp(ext, L".tif") == 0 || _wcsicmp(ext, L".tiff") == 0)
+            return GUID_ContainerFormatTiff;
+        else if (_wcsicmp(ext, L".gif") == 0) {
+            *pPixelFormat = GUID_WICPixelFormat8bppIndexed;
+            return GUID_ContainerFormatGif;
+        } else if (_wcsicmp(ext, L".wdp") == 0 || _wcsicmp(ext, L".hdp") == 0)
+            return GUID_ContainerFormatWmp;
+    }
+    return GUID_ContainerFormatPng;
+}
+
+LUA_METHOD(Canvas, capture) {
+  Direct2D *d = (Direct2D*)(lua_self(L, 1, Widget))->user;
+  wchar_t *filename = luaL_checkFilename(L, 2);
+  double dpi;
+  WICPixelFormatGUID fmt;
+	const GUID fileformat = GetWICContainerFormatFromExtension(filename, &fmt);
+  HRESULT hr;
+  RECT rc;
+  
+  ui->lua_uigetinfo(&dpi, NULL);
+  GetClientRect(d->hwnd, &rc);
+  int width = rc.right - rc.left;
+  int height = rc.bottom - rc.top;
+
+  HDC hdcWindow = GetDC(d->hwnd);
+  HDC hdcMemDC = CreateCompatibleDC(hdcWindow);
+  HBITMAP hBitmap = CreateCompatibleBitmap(hdcWindow, width*dpi, height*dpi);
+  HBITMAP hOld = (HBITMAP)SelectObject(hdcMemDC, hBitmap);
+
+  BitBlt(hdcMemDC, 0, 0, width, height, hdcWindow, 0, 0, SRCCOPY);
+  SelectObject(hdcMemDC, hOld);
+
+  IWICBitmap* pWICBitmap = NULL;
+  if (SUCCEEDED(d->WICFactory->CreateBitmapFromHBITMAP(hBitmap, NULL, WICBitmapUseAlpha, &pWICBitmap))) {
+      IWICStream* pStream = NULL;
+      IWICBitmapEncoder* pEncoder = NULL;
+      if (SUCCEEDED(d->WICFactory->CreateStream(&pStream)))
+          if (SUCCEEDED(pStream->InitializeFromFilename(filename, GENERIC_WRITE)))
+              if (SUCCEEDED(d->WICFactory->CreateEncoder(fileformat, NULL, &pEncoder)))
+                if (SUCCEEDED(pEncoder->Initialize(pStream, WICBitmapEncoderNoCache))) {
+                  IWICBitmapFrameEncode* pFrame = NULL;
+                  IPropertyBag2* pProps = NULL;
+                  if (SUCCEEDED(pEncoder->CreateNewFrame(&pFrame, &pProps)))
+                      if (SUCCEEDED(pFrame->Initialize(pProps)))
+                          if (SUCCEEDED(pFrame->SetSize(width, height)))
+                              if (SUCCEEDED(pFrame->SetPixelFormat(&fmt)))
+                                  if (SUCCEEDED(pFrame->WriteSource(pWICBitmap, NULL))) {
+                                      pFrame->Commit();
+                                      pEncoder->Commit();
+                                  }
+                    if (pFrame) pFrame->Release();
+                    if (pProps) pProps->Release();
+                  }
+    if (pEncoder) pEncoder->Release();
+    if (pStream) pStream->Release();
+  }
+  if (pWICBitmap) pWICBitmap->Release();
+  DeleteObject(hBitmap);
+  DeleteDC(hdcMemDC);
+  ReleaseDC(d->hwnd, hdcWindow);
+  free(filename);
+  return 0;
+}
+
+
 D2D1_POINT_2F toDIP(Direct2D *d, int x, int y) { 
   float dpiX, dpiY;
   D2D1_POINT_2F dip;
@@ -610,7 +709,7 @@ int event_onMouseDown(lua_State *L, Widget *w, MSG *msg) {
 
 int event_onMouseUp(lua_State *L, Widget *w, MSG *msg) {
   push_mouseargs(L, (Direct2D*)w->user, msg);
-  return lua_throwevent(L, "onMouseDown", 4);
+  return lua_throwevent(L, "onMouseUp", 4);
 }
 
 int event_onMouseWheel(lua_State *L, Widget *w, MSG *msg) {
@@ -653,6 +752,7 @@ OBJECT_MEMBERS(Canvas)
   METHOD(Canvas, Image)
   METHOD(Canvas, LinearGradient)
   METHOD(Canvas, RadialGradient)
+  METHOD(Canvas, capture)
   READWRITE_PROPERTY(Canvas, color)
   READWRITE_PROPERTY(Canvas, bgcolor)
   READWRITE_PROPERTY(Canvas, font)
@@ -668,6 +768,7 @@ END
 
 extern "C" {
     int __declspec(dllexport) luaopen_canvas(lua_State *L) {
+
         TImage = lua_registerobject(L, NULL, "Image", Image_constructor, Image_methods, Image_metafields);
 	      lua_setfield(L, LUA_REGISTRYINDEX, "Image");
         TLinearGradient = lua_registerobject(L, NULL, "LinearGradient", LinearGradient_constructor, LinearGradient_methods, LinearGradient_metafields);
@@ -675,14 +776,18 @@ extern "C" {
         TRadialGradient = lua_registerobject(L, NULL, "RadialGradient", RadialGradient_constructor, RadialGradient_methods, RadialGradient_metafields);
 	      lua_setfield(L, LUA_REGISTRYINDEX, "RadialGradient");
         luaL_require(L, "ui");
-        lua_regwidgetmt(L, Canvas, WIDGET_METHODS, FALSE, FALSE, TRUE, FALSE, FALSE);
+        luaL_getmetafield(L, -1, "__interface");
+        ui = (UIInterface *)lua_touserdata(L, -1);
+        lua_pop(L, 1);
+        TWidget = ui->TWidget;
+        ui->lua_regwidgetmt(L, Canvas, ui->WIDGET_METHODS, FALSE, FALSE, TRUE, FALSE, FALSE);
         luaL_setrawfuncs(L, Canvas_methods);
-        on_Hover = lua_registerevent(L, NULL, event_onHover);
-        on_Paint = lua_registerevent(L, NULL, event_onPaint);
-        on_MouseDown = lua_registerevent(L, NULL, event_onMouseDown);
-        on_MouseUp = lua_registerevent(L, NULL, event_onMouseUp);
-        on_MouseClick = lua_registerevent(L, NULL, event_onMouseClick);
-        on_MouseWheel = lua_registerevent(L, NULL, event_onMouseWheel);
+        on_Hover = ui->lua_registerevent(L, NULL, event_onHover);
+        on_Paint = ui->lua_registerevent(L, NULL, event_onPaint);
+        on_MouseDown = ui->lua_registerevent(L, NULL, event_onMouseDown);
+        on_MouseUp = ui->lua_registerevent(L, NULL, event_onMouseUp);
+        on_MouseClick = ui->lua_registerevent(L, NULL, event_onMouseClick);
+        on_MouseWheel = ui->lua_registerevent(L, NULL, event_onMouseWheel);
         return 0;
     }
 }

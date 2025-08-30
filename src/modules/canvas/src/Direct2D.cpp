@@ -19,7 +19,7 @@ Direct2D::Direct2D(HWND h, int width, int height)
         error = "Failed to create Direct2D object";
     else if (FAILED(DWriteCreateFactory(DWRITE_FACTORY_TYPE_SHARED, __uuidof(IDWriteFactory), reinterpret_cast<IUnknown **>(&DWriteFactory))))
         error = "Failed to create Direct2D object";
-    else if (FAILED(CoCreateInstance(CLSID_WICImagingFactory, nullptr, CLSCTX_INPROC_SERVER,  __uuidof(IWICImagingFactory), (void**)&WICFactory)))
+    else if (FAILED(CoCreateInstance(CLSID_WICImagingFactory2, nullptr, CLSCTX_INPROC_SERVER,  __uuidof(IWICImagingFactory2), (void**)&WICFactory)))
         error = "Failed to create WIC Imaging object";
     else {
         float dpiX, dpiY;

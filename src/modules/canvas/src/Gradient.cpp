@@ -28,7 +28,7 @@ static void table_togradient(lua_State *L, int idx, LinearGradient *g, BOOL isLi
     UINT32 rgba;
     double dpi;
     
-    lua_uigetinfo(&dpi, NULL);
+    ui->lua_uigetinfo(&dpi, NULL);
     lua_pushnil(L);
 	while (lua_next(L, idx)) {
 		if (lua_type(L, -2) != LUA_TNUMBER)
@@ -70,7 +70,7 @@ LUA_CONSTRUCTOR(RadialGradient) {
 
 static D2D1_POINT_2F table_topoint(lua_State *L, int idx) {
     double dpi;
-    lua_uigetinfo(&dpi, NULL);
+    ui->lua_uigetinfo(&dpi, NULL);
     luaL_checktype(L, idx, LUA_TTABLE);
     lua_rawgeti(L, idx, 1);
     lua_rawgeti(L, idx, 2);
@@ -79,7 +79,7 @@ static D2D1_POINT_2F table_topoint(lua_State *L, int idx) {
 
 static void point_totable(lua_State *L, D2D1_POINT_2F p) {
     double dpi;
-    lua_uigetinfo(&dpi, NULL);
+    ui->lua_uigetinfo(&dpi, NULL);
     lua_createtable(L, 0, 2);
     lua_pushnumber(L, floor(p.x/dpi));
     lua_setfield(L, -2, "x");
