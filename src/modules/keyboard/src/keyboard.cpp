@@ -323,7 +323,7 @@ static int waitkey(lua_State* L, int status, lua_KContext ctx)  {
         if (k && ((k->vk < 0x10) || (k->vk > 0x12)) && ((k->vk < 0xA0) || (k->vk > 0xA5))) {
           lua_pushstring(L, k->name);
           return 1;
-        }
+        } 
       }
   } else if (GetKeyState(bk->key->vk) & 0x8000) {
     if (!bk->funcref) {
@@ -363,10 +363,10 @@ LUA_METHOD(keyboard, waitfor)
   SetKeyboardState(keys);
   BindKey *bk = (BindKey *)calloc(1, sizeof(BindKey));
   bk->key = checkkey(L, 1);
-  lua_pushtask(L, waitkey, (void*)bk, gc_bind);
+  Task *t = lua_pushtask(L, waitkey, (void*)bk, gc_bind);
   lua_pushvalue(L, -1);
   lua_call(L, 0, 0);
-  lua_wait(L, -1);
+  lua_wait(L, t);
   return 1;
 }
 
