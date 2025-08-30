@@ -204,7 +204,5 @@ win:shortcut("n", FileNew.onClick, true)
 -- update status bar and Edit menuitems
 Edit:onChange()
 
--- shows the main Window and set focus to the Edit object
-win:show()
 ---------------------------- Main loop
 ui.run(win):wait()

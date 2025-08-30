@@ -22,7 +22,7 @@ if net.isalive then
         request = "GET /humans.txt HTTP/1.1\r\nHost: www.google.com\r\n\r\n" 
         sock:send(request)
         console.writecolor("cyan", "Waiting for HTTP GET response... ")
-        response = sock:recv()
+        response = tostring(sock:recv())
         if not response then 
             console.writecolor("lightred", "unable to recv !\n")
         else

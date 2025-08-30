@@ -20,6 +20,7 @@ edit.richtext = false
 edit.readonly = true
 edit.bgcolor = 0x000030
 edit.fgcolor = 0xAAAAAA
+edit.border = false
 
 win:show()
 
