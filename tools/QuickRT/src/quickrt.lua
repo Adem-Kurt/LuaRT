@@ -66,7 +66,6 @@ end
 async (function ()
 	while true do
 		sleep()
-		ui.update()
 		console.write("\n")
 		-- Read
 		local cmd = indent(readline(nil, env))

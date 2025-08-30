@@ -45,7 +45,6 @@ function readline(prompt, env)
 	return await (function()
 		while (true) do 
 			sleep()
-			ui.update()
 			if console.keyhit then
 				local c, special = console.readchar()
 				console.cursor = false
