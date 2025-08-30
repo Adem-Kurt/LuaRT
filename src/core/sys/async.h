@@ -30,16 +30,25 @@ extern "C" {
     void unhook_tasks(lua_State *L);
 
     //-------- Close a Task
-    #define close_task(t) (t)->status = TTerminated
+    void close_task(lua_State *L, Task *t);
 
     //-------- Resume a Task
-    int resume_task(lua_State *L, Task *t, int args);
+    BOOL resume_task(lua_State *L, Task *t, int args);
+
+    //-------- Count active Tasks
+    int task_count();
+
+    //-------- Pause Task
+    void pause_Task(Task *t);
+    
+    //-------- Resume Task
+    void resume_Task(Task *t);
 
     //-------- Task scheduler
-    int update_tasks(lua_State *L);
+    BOOL update_tasks(lua_State *L);
 
     //-------- Wait for a Task at specific index
-    int waitfor_task(lua_State *L, int idx);
+    int waitfor_task(lua_State *L, Task *t);
 
     //-------- Wait for all tasks
     int waitall_tasks(lua_State *L);

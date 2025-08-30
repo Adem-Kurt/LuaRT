@@ -16,7 +16,7 @@ extern "C" {
 #include <windows.h>
 
 
-typedef enum { TRunning, TCreated, TSleep, TWaiting, TTerminated } TaskStatus;
+typedef enum { TRunning, TCreated, TSleep, TWaiting, TPaused, TTerminated } TaskStatus;
 
 struct Task {
 	luart_type	type;
@@ -25,8 +25,11 @@ struct Task {
 	TaskStatus	status;
 	int			ref;
 	int 		taskref;
-	Task 		*waiting;
+	int			nresults;
+	BOOL 		iswaiting;
 	ULONGLONG	sleep;
+	ULONGLONG	timeout;
+	int			priority;
 	void		*userdata;
 	lua_CFunction gc_func;
  };
