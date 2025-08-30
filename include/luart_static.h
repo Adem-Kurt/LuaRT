@@ -575,8 +575,8 @@ extern "C" {
 #include <CommCtrl.h>
 
 //--------------------------------------------------| LuaRT _VERSION
-#define xstr(s) str(s)
-#define str(s) #s
+#define xstr(s) ___str(s)
+#define ___str(s) #s
 #undef LUA_VERSION_MAJOR
 #undef LUA_VERSION_MINOR
 #undef LUA_VERSION_RELEASE
@@ -738,7 +738,7 @@ typedef struct Task Task;
 
 //--- Push a task with the provided continuation C function and starts it, with a context and optional cleanup lua_CFunction
 //--- Always returns 1
-typedef int (__cdecl *lua_pushtask_t) (lua_State *L, lua_KFunction taskfunc, void *userdata, lua_CFunction gc);
+typedef Task * (__cdecl *lua_pushtask_t) (lua_State *L, lua_KFunction taskfunc, void *userdata, lua_CFunction gc);
 typedef void (__cdecl *lua_setupdate_t) (lua_CFunction func);
 
 //--- Sleeps the current task or the current Lua state for the provided delay
@@ -748,7 +748,10 @@ typedef void (__cdecl *lua_sleep_t) (lua_State *L, lua_Integer delay);
 typedef int (__cdecl *lua_throwevent_t) (lua_State *L, const char *name, int nparams);
 
 //--- Wait for the Task at index idx to terminate
-typedef int (__cdecl *lua_wait_t) (lua_State *L, int idx);
+typedef int (__cdecl *lua_wait_t) (lua_State *L, Task *t);
+
+//--- Get the number of current active Tasks (not terminated)
+typedef int (__cdecl *lua_taskcount_t) ();
 
 //--- Get the current executing Task
 typedef Task * (__cdecl *lua_gettask_t) (lua_State *L);
@@ -791,26 +794,26 @@ typedef int (__cdecl *zip_entry_open_t) (struct zip_t *zip, const char *entrynam
 typedef int (__cdecl *zip_entry_close_t) (struct zip_t *zip);
 typedef int (__cdecl *zip_entry_fread_t) (struct zip_t *zip, const char *filename);
 
+//-------------------- Lua Clipboard format
+typedef HGLOBAL (__cdecl *table_to_HDROPFormat_t) (lua_State *L, int idx);
+
 //--------------------------------------------------| LuaRT sys/ui types
 typedef int WidgetType;
 struct _Widget;
 typedef struct _Widget Widget;
 typedef int (*lua_Event)(lua_State *L, Widget *w, MSG *msg);
 
-typedef lua_Integer (__cdecl *lua_registerevent_t) (lua_State *L, const char *methodname, lua_Event event);
-typedef void * (__cdecl *lua_getevent_t) (lua_State *L, lua_Integer eventid, int *type);
-
 typedef void (*UI_INFO)(double *dpi, BOOL *isdark);
 typedef void *(*WIDGET_INIT)(lua_State *L, Widget **wp, double *dpi, BOOL *isdark);
 typedef Widget *(*WIDGET_CONSTRUCTOR)(lua_State *L, HWND h, WidgetType type, Widget *wp, SUBCLASSPROC proc);
 typedef Widget *(*WIDGET_DESTRUCTOR)(lua_State *L);
 typedef void (*WIDGET_REGISTER)(lua_State *L, int *type, const char *__typename, lua_CFunction constructor, const luaL_Reg *methods, const luaL_Reg *mt, BOOL has_text, BOOL has_font, BOOL has_cursor, BOOL has_icon, BOOL has_autosize, BOOL has_textalign, BOOL has_tooltip, BOOL is_parent, BOOL do_pop);
+typedef lua_Integer (*WIDGET_REGISTEREVENT)(lua_State *L, const char *methodname, lua_Event event);
 typedef LRESULT (CALLBACK *WIDGET_PROC)(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam, UINT_PTR uIdSubclass, DWORD_PTR dwRefData);
 
 #ifndef LUART_TYPES
 #define LUART_TYPES
 LUA_API luart_type TTask;
-LUA_API luart_type TWidget;
 LUA_API luart_type TFile;
 LUA_API luart_type TBuffer;
 LUA_API luart_type TCOM;
@@ -818,15 +821,20 @@ LUA_API luart_type TDatetime;
 LUA_API luart_type TPipe;
 LUA_API luart_type TZip;
 LUA_API luart_type TDirectory;
-LUA_API lua_Integer *WM_LUAMAX;
-LUA_API  WIDGET_INIT 			lua_widgetinitialize;
-LUA_API  WIDGET_CONSTRUCTOR		lua_widgetconstructor;
-LUA_API  WIDGET_DESTRUCTOR		lua_widgetdestructor;
-LUA_API  WIDGET_REGISTER		lua_registerwidget;
-LUA_API  WIDGET_PROC			lua_widgetproc;
-LUA_API  UI_INFO				lua_uigetinfo;
-LUA_API  luaL_Reg 				*WIDGET_METHODS;
 #endif
+
+typedef struct {
+	UINT                *WM_LUAMAX;
+	WIDGET_INIT 		lua_widgetinitialize;
+	WIDGET_CONSTRUCTOR	lua_widgetconstructor;
+	WIDGET_DESTRUCTOR	lua_widgetdestructor;
+	WIDGET_REGISTER		lua_registerwidget;
+	WIDGET_REGISTEREVENT    lua_registerevent;
+	WIDGET_PROC			lua_widgetproc;
+	UI_INFO				lua_uigetinfo;
+	luaL_Reg 			*WIDGET_METHODS;
+    luart_type          TWidget;
+} UIInterface;
 
 #ifdef __cplusplus
 }
@@ -851,7 +859,6 @@ LUA_API  luaL_Reg 				*WIDGET_METHODS;
 #define lua_error               LUA_PREFIX.Error
 #define lua_gc                  LUA_PREFIX.Gc
 #define lua_getallocf           LUA_PREFIX.Getallocf
-#define lua_getevent            LUA_PREFIX.Getevent
 #define lua_getfield            LUA_PREFIX.Getfield
 #define lua_getglobal           LUA_PREFIX.Getglobal
 #define lua_gethook             LUA_PREFIX.Gethook
@@ -910,7 +917,6 @@ LUA_API  luaL_Reg 				*WIDGET_METHODS;
 #define lua_rawset              LUA_PREFIX.Rawset
 #define lua_rawseti             LUA_PREFIX.Rawseti
 #define lua_rawsetp             LUA_PREFIX.Rawsetp
-#define lua_registerevent       LUA_PREFIX.Registerevent
 #define lua_registermodule      LUA_PREFIX.Registermodule
 #define lua_registerobject      LUA_PREFIX.Registerobject
 #define lua_resetthread         LUA_PREFIX.Resetthread
@@ -935,6 +941,7 @@ LUA_API  luaL_Reg 				*WIDGET_METHODS;
 #define lua_status              LUA_PREFIX.Status
 #define lua_stringtonumber      LUA_PREFIX.Stringtonumber
 #define lua_super               LUA_PREFIX.Super
+#define lua_taskcount           LUA_PREFIX.Taskcount
 #define lua_throwevent          LUA_PREFIX.Throwevent
 #define lua_toboolean           LUA_PREFIX.Toboolean
 #define lua_toBuffer            LUA_PREFIX.ToBuffer
@@ -1021,12 +1028,12 @@ LUA_API  luaL_Reg 				*WIDGET_METHODS;
 #define luaopen_string          LUA_PREFIX.Open_string
 #define luaopen_table           LUA_PREFIX.Open_table
 #define luaopen_utf8            LUA_PREFIX.Open_utf8
+#define table_to_HDROPFormat    LUA_PREFIX.Le_to_HDROPFormat
 #define zip_entry_close         LUA_PREFIX._entry_close
 #define zip_entry_fread         LUA_PREFIX._entry_fread
 #define zip_entry_open          LUA_PREFIX._entry_open
 #define zip_entry_read          LUA_PREFIX._entry_read
 #define TTask                   (*LUA_PREFIX.var_TTask)
-#define TWidget                 (*LUA_PREFIX.var_TWidget)
 #define TFile                   (*LUA_PREFIX.var_TFile)
 #define TBuffer                 (*LUA_PREFIX.var_TBuffer)
 #define TCOM                    (*LUA_PREFIX.var_TCOM)
@@ -1034,14 +1041,6 @@ LUA_API  luaL_Reg 				*WIDGET_METHODS;
 #define TPipe                   (*LUA_PREFIX.var_TPipe)
 #define TZip                    (*LUA_PREFIX.var_TZip)
 #define TDirectory              (*LUA_PREFIX.var_TDirectory)
-#define WM_LUAMAX               (*LUA_PREFIX.var_WM_LUAMAX)
-#define lua_widgetinitialize    (*LUA_PREFIX.var_lua_widgetinitialize)
-#define lua_widgetconstructor   (*LUA_PREFIX.var_lua_widgetconstructor)
-#define lua_widgetdestructor    (*LUA_PREFIX.var_lua_widgetdestructor)
-#define lua_registerwidget      (*LUA_PREFIX.var_lua_registerwidget)
-#define lua_widgetproc          (*LUA_PREFIX.var_lua_widgetproc)
-#define lua_uigetinfo           (*LUA_PREFIX.var_lua_uigetinfo)
-#define WIDGET_METHODS          (*LUA_PREFIX.var_WIDGET_METHODS)
 
 typedef struct lua_All_functions
 {
@@ -1065,7 +1064,6 @@ typedef struct lua_All_functions
   lua_error_t             Error;
   lua_gc_t                Gc;
   lua_getallocf_t         Getallocf;
-  lua_getevent_t          Getevent;
   lua_getfield_t          Getfield;
   lua_getglobal_t         Getglobal;
   lua_gethook_t           Gethook;
@@ -1124,7 +1122,6 @@ typedef struct lua_All_functions
   lua_rawset_t            Rawset;
   lua_rawseti_t           Rawseti;
   lua_rawsetp_t           Rawsetp;
-  lua_registerevent_t     Registerevent;
   lua_registermodule_t    Registermodule;
   lua_registerobject_t    Registerobject;
   lua_resetthread_t       Resetthread;
@@ -1149,6 +1146,7 @@ typedef struct lua_All_functions
   lua_status_t            Status;
   lua_stringtonumber_t    Stringtonumber;
   lua_super_t             Super;
+  lua_taskcount_t         Taskcount;
   lua_throwevent_t        Throwevent;
   lua_toboolean_t         Toboolean;
   lua_toBuffer_t          ToBuffer;
@@ -1235,12 +1233,12 @@ typedef struct lua_All_functions
   luaopen_string_t        Open_string;
   luaopen_table_t         Open_table;
   luaopen_utf8_t          Open_utf8;
+  table_to_HDROPFormat_t  Le_to_HDROPFormat;
   zip_entry_close_t       _entry_close;
   zip_entry_fread_t       _entry_fread;
   zip_entry_open_t        _entry_open;
   zip_entry_read_t        _entry_read;
   luart_type              *var_TTask;
-  luart_type              *var_TWidget;
   luart_type              *var_TFile;
   luart_type              *var_TBuffer;
   luart_type              *var_TCOM;
@@ -1248,14 +1246,6 @@ typedef struct lua_All_functions
   luart_type              *var_TPipe;
   luart_type              *var_TZip;
   luart_type              *var_TDirectory;
-  lua_Integer *           *var_WM_LUAMAX;
-  WIDGET_INIT             *var_lua_widgetinitialize;
-  WIDGET_CONSTRUCTOR      *var_lua_widgetconstructor;
-  WIDGET_DESTRUCTOR       *var_lua_widgetdestructor;
-  WIDGET_REGISTER         *var_lua_registerwidget;
-  WIDGET_PROC             *var_lua_widgetproc;
-  UI_INFO                 *var_lua_uigetinfo;
-  luaL_Reg 				*          *var_WIDGET_METHODS;
 } lua_All_functions;
 
 extern lua_All_functions staticlua;

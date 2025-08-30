@@ -20,8 +20,8 @@ extern "C" {
 #include <CommCtrl.h>
 
 //--------------------------------------------------| LuaRT _VERSION
-#define xstr(s) str(s)
-#define str(s) #s
+#define xstr(s) ___str(s)
+#define ___str(s) #s
 #undef LUA_VERSION_MAJOR
 #undef LUA_VERSION_MINOR
 #undef LUA_VERSION_RELEASE
@@ -184,7 +184,7 @@ typedef struct Task Task;
 
 //--- Push a task with the provided continuation C function and starts it, with a context and optional cleanup lua_CFunction
 //--- Always returns 1
-LUA_API int lua_pushtask(lua_State *L, lua_KFunction taskfunc, void *userdata, lua_CFunction gc);
+LUA_API Task *lua_pushtask(lua_State *L, lua_KFunction taskfunc, void *userdata, lua_CFunction gc);
 LUA_API void lua_setupdate(lua_CFunction func);
 
 //--- Sleeps the current task or the current Lua state for the provided delay
@@ -194,7 +194,10 @@ LUA_API void lua_sleep(lua_State *L, lua_Integer delay);
 LUA_API int lua_throwevent(lua_State *L, const char *name, int nparams);
 
 //--- Wait for the Task at index idx to terminate
-LUA_API int lua_wait(lua_State *L, int idx);
+LUA_API int lua_wait(lua_State *L, Task *t);
+
+//--- Get the number of current active Tasks
+LUA_API int lua_taskcount();
 
 //--- Get the current executing Task
 LUA_API Task *lua_gettask(lua_State *L);
@@ -237,26 +240,26 @@ LUA_API int zip_entry_open(struct zip_t *zip, const char *entryname);
 LUA_API int zip_entry_close(struct zip_t *zip);
 LUA_API int zip_entry_fread(struct zip_t *zip, const char *filename);
 
+//-------------------- Lua Clipboard format
+LUA_API HGLOBAL table_to_HDROPFormat(lua_State *L, int idx);
+
 //--------------------------------------------------| LuaRT sys/ui types
 typedef int WidgetType;
 struct _Widget;
 typedef struct _Widget Widget;
 typedef int (*lua_Event)(lua_State *L, Widget *w, MSG *msg);
 
-LUA_API lua_Integer lua_registerevent(lua_State *L, const char *methodname, lua_Event event);
-LUA_API void *lua_getevent(lua_State *L, lua_Integer eventid, int *type);
-
 typedef void (*UI_INFO)(double *dpi, BOOL *isdark);
 typedef void *(*WIDGET_INIT)(lua_State *L, Widget **wp, double *dpi, BOOL *isdark);
 typedef Widget *(*WIDGET_CONSTRUCTOR)(lua_State *L, HWND h, WidgetType type, Widget *wp, SUBCLASSPROC proc);
 typedef Widget *(*WIDGET_DESTRUCTOR)(lua_State *L);
 typedef void (*WIDGET_REGISTER)(lua_State *L, int *type, const char *__typename, lua_CFunction constructor, const luaL_Reg *methods, const luaL_Reg *mt, BOOL has_text, BOOL has_font, BOOL has_cursor, BOOL has_icon, BOOL has_autosize, BOOL has_textalign, BOOL has_tooltip, BOOL is_parent, BOOL do_pop);
+typedef lua_Integer (*WIDGET_REGISTEREVENT)(lua_State *L, const char *methodname, lua_Event event);
 typedef LRESULT (CALLBACK *WIDGET_PROC)(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam, UINT_PTR uIdSubclass, DWORD_PTR dwRefData);
 
 #ifndef LUART_TYPES
 #define LUART_TYPES
 LUA_API luart_type TTask;
-LUA_API luart_type TWidget;
 LUA_API luart_type TFile;
 LUA_API luart_type TBuffer;
 LUA_API luart_type TCOM;
@@ -264,15 +267,20 @@ LUA_API luart_type TDatetime;
 LUA_API luart_type TPipe;
 LUA_API luart_type TZip;
 LUA_API luart_type TDirectory;
-LUA_API lua_Integer *WM_LUAMAX;
-LUA_API  WIDGET_INIT 			lua_widgetinitialize;
-LUA_API  WIDGET_CONSTRUCTOR		lua_widgetconstructor;
-LUA_API  WIDGET_DESTRUCTOR		lua_widgetdestructor;
-LUA_API  WIDGET_REGISTER		lua_registerwidget;
-LUA_API  WIDGET_PROC			lua_widgetproc;
-LUA_API  UI_INFO				lua_uigetinfo;
-LUA_API  luaL_Reg 				*WIDGET_METHODS;
 #endif
+
+typedef struct {
+	UINT                *WM_LUAMAX;
+	WIDGET_INIT 		lua_widgetinitialize;
+	WIDGET_CONSTRUCTOR	lua_widgetconstructor;
+	WIDGET_DESTRUCTOR	lua_widgetdestructor;
+	WIDGET_REGISTER		lua_registerwidget;
+	WIDGET_REGISTEREVENT    lua_registerevent;
+	WIDGET_PROC			lua_widgetproc;
+	UI_INFO				lua_uigetinfo;
+	luaL_Reg 			*WIDGET_METHODS;
+    luart_type          TWidget;
+} UIInterface;
 
 #ifdef __cplusplus
 }
