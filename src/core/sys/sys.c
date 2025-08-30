@@ -203,18 +203,17 @@ LUA_PROPERTY_SET(sys, atexit) {
 
 LUA_API HGLOBAL table_to_HDROPFormat(lua_State *L, int idx) {
     luaL_checktype(L, idx, LUA_TTABLE);
-    size_t totalLength = sizeof(DROPFILES) + 1; // +1 for the double null terminator
+    size_t totalLength = sizeof(DROPFILES) + 1; 
     int numFiles = lua_rawlen(L, idx);
 
     for (int i = 1; i <= numFiles; ++i) {
         lua_rawgeti(L, idx, i);
         wchar_t *path = luaL_checkFilename(L, -1);
-		totalLength += (wcslen(path)+1) * sizeof(wchar_t); // +1 for the null terminator
+		totalLength += (wcslen(path)+1) * sizeof(wchar_t); 
 		free(path);
         lua_pop(L, 1);
     }
 
-    // Allocate global memory for the DROPFILES structure
     HGLOBAL hGlobal;
     if (!(hGlobal = GlobalAlloc(GHND | GMEM_SHARE, totalLength)))
 memerr:	luaL_error(L, "memory allocation failed");

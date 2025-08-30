@@ -74,7 +74,7 @@ static BOOL VariantToLua(lua_State *L, VARIANT *result, ITypeInfo *t, TYPEATTR *
 		case VT_I2:
 		case VT_I4:
 		case VT_I8:
-		case VT_INT:		if (!isEnum && attr->typekind == TKIND_ENUM) {
+		case VT_INT:		if (!isEnum && attr && attr->typekind == TKIND_ENUM) {
 								wchar_t *name;
 								VARDESC *vardesc;
 								BOOL done = FALSE;
