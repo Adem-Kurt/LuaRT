@@ -224,13 +224,12 @@
 #define LUA_CPATH_DEFAULT \
 		LUA_SHRDIR"?\\?-static.dll;" \
 		LUA_RTCDIR"?\\?-static.dll;" \
-		".\\?-static.dll" \
-		LUA_CDIR"?.dll;" \
-		LUA_CDIR"..\\lib\\lua\\" LUA_VDIR "\\?.dll;" \
-		LUA_SHRDIR"?\\?.dll;" LUA_SHRDIR"?.dll;" \
-		LUA_SHRDIR"?\\?.dll;" LUA_SHRDIR"?.dll;" \
-		LUA_RTCDIR"?\\?.dll;" LUA_RTCDIR"?.dll;" \
-		LUA_CDIR"loadall.dll;" ".\\?.dll;"
+		".\\?-static.dll;" \
+		LUA_CDIR"?-static.dll;" \
+		LUA_CDIR"..\\lib\\lua\\" LUA_VDIR "\\?-static.dll;" \
+		LUA_SHRDIR"?\\?-static.dll;" LUA_SHRDIR"?-static.dll;" \
+		LUA_RTCDIR"?\\?-static.dll;" LUA_RTCDIR"?-static.dll;" \
+		LUA_CDIR"loadall.dll;" ".\\?-static.dll;"
 #else
 #define LUA_CPATH_DEFAULT \
 		LUA_CDIR"?.dll;" \

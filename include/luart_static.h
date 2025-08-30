@@ -750,7 +750,7 @@ typedef int (__cdecl *lua_throwevent_t) (lua_State *L, const char *name, int npa
 //--- Wait for the Task at index idx to terminate
 typedef int (__cdecl *lua_wait_t) (lua_State *L, Task *t);
 
-//--- Get the number of current active Tasks (not terminated)
+//--- Get the number of current active Tasks
 typedef int (__cdecl *lua_taskcount_t) ();
 
 //--- Get the current executing Task

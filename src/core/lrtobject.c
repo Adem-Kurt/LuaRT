@@ -267,7 +267,7 @@ LUA_METHOD(module, __index) {
 LUA_METHOD(module, __newindex) {
 	const char *modname;
 	luaL_getmetafield(L, 1, "__name");
-	modname = lua_tostring(L, 1);
+	modname = lua_tostring(L, -1);
 	lua_pop(L, 1);
 	if (module_getfield(L, "set_")) {
 		lua_pushvalue(L, 3);
@@ -549,32 +549,3 @@ void *lua_iscinstance(lua_State *L, int idx, luart_type t) {
 	}
 	return obj;
 }
-
-lua_Integer lua_registerevent(lua_State *L, const char *methodname, lua_Event event) {
-	luaL_getsubtable(L, LUA_REGISTRYINDEX, "LuaRT Events");
-	*WM_LUAMAX += luaL_len(L, -1)+1;
-	if (methodname)
-		lua_pushstring(L, methodname);
-	else lua_pushlightuserdata(L, event);
-	lua_rawseti(L, -2, *WM_LUAMAX);
-	lua_pop(L, 1);
-	return *WM_LUAMAX;
-}
-
-void *lua_getevent(lua_State *L, lua_Integer eventid, int *type) {
-	char *methodname = NULL;
-	if (eventid <= *WM_LUAMAX) {
-		luaL_getsubtable(L, LUA_REGISTRYINDEX, "LuaRT Events");
-		if ( (*type = lua_rawgeti(L, -1, eventid)) == LUA_TSTRING ) {		
-			methodname = (char *)lua_tostring(L, -1);
-			lua_pop(L, 2);
-		}
-		else { 
-			lua_insert(L, -2);
-			lua_pop(L, 1);	
-		}
-	}
-	return methodname;
-}
-
-luart_type			TWidget = 0;

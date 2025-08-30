@@ -46,7 +46,7 @@ copy(parent.."\\README.md", "README.md")
 copy(parent.."\\LICENSE", "LICENSE")
 copy(parent.."\\CHANGELOG.md")
 file_add("../../setup/uninstall.wlua", "local VERSION = '"..VERSION.."'")
-sys.cmd('..\\..\\bin\\rtc.exe -i "../../setup/img/logo.ico" -s -w -o ..\\dist\\LuaRT-remove.exe ../../setup/uninstall.wlua ../../setup/img >nul')
+sys.cmd('..\\..\\bin\\rtc.exe -i "../../setup/img/logo.ico" -s -w -o ..\\dist\\LuaRT-remove.exe ../../setup/uninstall.wlua ../../setup/img -lui >nul')
 console.write("■")
 
 local version = sys.File(parent.."/tools/LuaRT-Studio/src/version.lua"):open("write")
@@ -115,7 +115,7 @@ z:close()
 
 file_add("../../setup/install.wlua", "local VERSION = '"..VERSION.."'")
 local exe = 'LuaRT-'..VERSION..'-'..PLATFORM
-sys.cmd('..\\..\\bin\\rtc.exe -i "resources/box.ico" -s -w -o "'..exe..'.exe" ../../setup/install.wlua ../../setup >nul')
+sys.cmd('..\\..\\bin\\rtc.exe -i "resources/box.ico" -s -w -o "'..exe..'.exe" ../../setup/install.wlua ../../setup -lui >nul')
 
 
 dist:removeall()

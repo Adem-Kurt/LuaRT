@@ -18,11 +18,7 @@
 #include <wchar.h>
 #include <stdlib.h>
 #include <shlwapi.h>
-#ifndef __GNUC__
-	#include <shlobj_core.h>
-#endif
-#include <ui\ui.h>
-
+#include <shlobj_core.h>
 #include <luart.h>
 #include "resources\resource.h"
 
@@ -175,16 +171,6 @@ static int update_exe_icon(lua_State *L) {
 }
 #endif
 
-#ifndef AIO
-//------- LuaRT modules included in luart.exe/wluart.exe
-	#if defined(RTWIN)
-		static luaL_Reg luaRT_libs[] = {
-			{ "ui",				luaopen_ui },
-			{ NULL,		NULL }
-		};
-	#endif
-#endif
-
 void lua_stop(void) {
 	if (L) {
 		if (lua_getfield(L, LUA_REGISTRYINDEX, "atexit") == LUA_TFUNCTION) {
@@ -196,10 +182,6 @@ void lua_stop(void) {
 		L = NULL;
 	}
 }
-
-#if defined(RTWIN) || defined(UI)
-LUA_API int do_update(lua_State *L);
-#endif
 
 #ifdef RTWIN
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine, INT nCmdShow) {
@@ -227,19 +209,23 @@ int main() {
 	CoInitializeEx(NULL, COINIT_APARTMENTTHREADED);
 	L = luaL_newstate();
 	luaL_openlibs(L);
-#ifndef AIO	
-	#if defined(RTWIN)
-		const luaL_Reg *lib;
-		for (lib = luaRT_libs; lib->func; lib++) {
-			luaL_requiref(L, lib->name, lib->func, 0);
-			lua_pop(L, 1);
-		}
-	#endif
-#endif
 	GetModuleFileNameW(NULL, (WCHAR*)exename, sizeof(exename));
 	if ((is_embeded = (luaL_embedopen(L) != NULL))) {
 		luaL_requiref(L, "embed", luaopen_embed, 2);
+#ifdef RTSTATIC
+		char tmpdir[MAX_PATH];
+		GetTempPathA(MAX_PATH, tmpdir);
+		char cpath[MAX_PATH * 2];
+		snprintf(cpath, sizeof(cpath), ";%s\\__modules\\?\\?-static.dll", tmpdir);
+		lua_getglobal(L, "package");
+		lua_getfield(L, -1, "cpath");
+		lua_pushstring(L, cpath);
+		lua_concat(L, 2);
+		lua_setfield(L, -2, "cpath");
+		lua_pop(L, 2);
+#else
 		lua_pop(L, 1);
+#endif
 	}
 
 	atexit(lua_stop);
@@ -259,9 +245,7 @@ int main() {
 		lua_rawseti(L, -2, -1);
 		lua_setglobal(L, "arg");
 		lua_gc(L, LUA_GCGEN, 0, 0);
-#if defined(RTWIN) || defined(UI)
-		lua_setupdate(do_update);
-#endif
+		
 		if (is_embeded) {	
 			if (luaL_loadstring(L, "load(embed.File('__mainLuaRTStartup__.lua'):open():read())()"))
 				goto error;
@@ -292,7 +276,7 @@ compiledscript:		t = (Task*)lua_pushinstance(L, Task, 1);
 					if (lua_pcall(L, 0, 0, 0)) 
 						goto error;
 					do {
-						if (lua_schedule(L) == -1) {
+						if (!lua_schedule(L)) {
 error:			
 #ifdef RTWIN
 							size_t len;
@@ -307,7 +291,7 @@ error:
 								}
 								lua_pushstring(L, err);							
 								wchar_t *msg = lua_towstring(L, -1);		
-								ThemedMsgBox(L"Runtime error", msg, MB_ICONERROR | MB_OK);
+								MessageBoxW(NULL, msg, L"Runtime error", MB_ICONERROR | MB_OK);
 								free(msg);					
 							}
 #else

@@ -179,9 +179,7 @@ static BOOL write_dir(Zip *z, const char *_dir, BOOL isfullpath, const char* des
 	BOOL result = TRUE;
 
 	if (dest) {
-		// int s = -1;
 		char *trailing = append_path(dest, "");
-		// char *dirname = trailing; //(trailing, &s);
 		size_t s = strlen(trailing);
 		make_dir_path(z, trailing);
         free(trailing);
