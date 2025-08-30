@@ -68,7 +68,7 @@ static int WaitTask(lua_State *L) {
 	return lua_yieldk(L, 0, (lua_KContext)lua_touserdata(L, lua_upvalueindex(1)), (lua_KFunction)lua_touserdata(L, lua_upvalueindex(2)));
 }
 
-LUA_API int lua_pushtask(lua_State *L, lua_KFunction taskfunc, void *userdata, lua_CFunction gc) {
+LUA_API Task *lua_pushtask(lua_State *L, lua_KFunction taskfunc, void *userdata, lua_CFunction gc) {
 	lua_pushlightuserdata(L, userdata);
 	lua_pushlightuserdata(L, taskfunc);
 	lua_pushcclosure(L, WaitTask, 2);
@@ -78,7 +78,7 @@ LUA_API int lua_pushtask(lua_State *L, lua_KFunction taskfunc, void *userdata, l
 		t->gc_func = gc;
 	lua_pushvalue(L, -1);
 	lua_call(L, 0, 0);
-	return 1;	
+	return t;	
 }
 
 //-------------------------------------------------[LuaL_setfuncs alternative with lua_rawset]
@@ -130,8 +130,13 @@ LUA_API int lua_throwevent(lua_State *L, const char *name, int nparams) {
 } 
 
 //-------------------------------------------------[lua_wait() function]
-LUA_API int lua_wait(lua_State *L, int idx) {
-	return waitfor_task(L, idx);
+LUA_API int lua_wait(lua_State *L, Task *t) {
+	return waitfor_task(L, t);
+}
+
+//-------------------------------------------------[lua_taskcount() function]
+LUA_API int lua_taskcount() {
+	return task_count();
 }
 
 //-------------------------------------------------[lua_sleep() function]
@@ -167,13 +172,9 @@ LUA_METHOD(luaB, await) {
 		lua_pushvalue(L, 1);
 		t = (Task *)lua_pushinstance(L, Task, 1);
 	}
-	t->waiting = search_task(L);
 	if (t->status == TCreated) 
 		start_task(L, t, idx);
-	t->waiting->status = TWaiting;
-	while(t->status != TTerminated)
-		nresults = update_tasks(L);
-	return nresults;
+	return waitfor_task(L, t);
 }
 
 //----------------------------------[ sleep() ]
@@ -388,14 +389,11 @@ static const luaL_Reg def_libs[] = {
   {LUA_STRLIBNAME, 	luaopen_string},
   {LUA_MATHLIBNAME, luaopen_math},
   {LUA_DBLIBNAME, 	luaopen_debug},
-  {"io",	luaopen_io },
-  {"os",	luaopen_os },
-  {"utf8",	luaopen_utf8 },
-  {"sys",		luaopen_sys},
+  {LUA_IOLIBNAME,	luaopen_io },
+  {LUA_OSLIBNAME,	luaopen_os },
+  {LUA_UTF8LIBNAME,	luaopen_utf8 },
+  {"sys",			luaopen_sys},
   {"compression",	luaopen_compression },
-#ifdef AIO
-  {"ui",		luaopen_ui },
-#endif  
   {NULL, NULL}
 };
 
@@ -409,10 +407,8 @@ LUALIB_API void luaL_openlibs(lua_State *L) {
 	register_module(L, "console", luaopen_console);
 	lua_pushglobaltable(L);
 	luaL_setfuncs(L, baselib_ext, 0);
-	/* set global _ARCH */
 	lua_pushliteral(L, LUA_ARCH);
 	lua_setfield(L, -2, "_ARCH");
-	/* set LuaRT _VERSION */
 	lua_pushliteral(L, LUA_VERSION);
 	lua_setfield(L, -2, "_VERSION");
 	lua_pop(L, 1);
