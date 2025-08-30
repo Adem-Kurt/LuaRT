@@ -31,7 +31,6 @@ typedef struct {
 typedef struct {
     Port        *port;             
     OVERLAPPED  ov;          
-    char        *buffer;           
     DWORD       bytesToRead;     
     BOOL        failed;
     char        *line;             
@@ -39,6 +38,7 @@ typedef struct {
     size_t      line_capacity;   
     const char  *eol;        
     size_t      eol_len; 
+    BOOL        iswrite;
 } PortTask;
 
 extern luart_type TPort;
