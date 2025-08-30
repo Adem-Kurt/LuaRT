@@ -1,4 +1,4 @@
-﻿local VERSION = '2.0.1'
+﻿local VERSION = '2.1.0'
 --[[
     | LuaRT - A Windows programming framework for Lua
     | Luart.org, Copyright (c) Tine Samir 2023.
@@ -11,7 +11,6 @@
     
 local ui = require "ui"
 
-local File = embed and embed.File or sys.File
 
 local exe = sys.File(arg[-1])
 local tmpexe = sys.File(sys.env.TEMP..'\\'..exe.name)
@@ -37,7 +36,7 @@ win.bgcolor = ui.theme == "light" and 0xFFFFFF or 0
 win.font = "Segoe UI"
 win.installation = false
 
-local img = ui.Picture(win, File(("logox"..factor..".png"):gsub(",", ".")).fullpath)
+local img = ui.Picture(win, sys.File(("logox"..factor..".png"):gsub(",", ".")).fullpath)
 win.width = img.width
 img:center()
 img.y = 20

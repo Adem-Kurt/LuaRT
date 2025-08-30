@@ -1,4 +1,4 @@
-﻿local VERSION = '2.0.1'
+﻿local VERSION = '2.1.0'
 
 --[[
     | LuaRT - A Windows programming framework for Lua
@@ -12,8 +12,6 @@
 
 local ui = require "ui"
 local compression = require "compression"
-
-local File = embed == nil and sys.File  or embed.File
 
 local factor
 if ui.dpi < 1.5 then
@@ -50,7 +48,7 @@ if update then
     end
 end
 
-local img = ui.Picture(win, File(("img/logox"..factor..".png"):gsub(",", ".")).fullpath)
+local img = ui.Picture(win, sys.File(("img/logox"..factor..".png"):gsub(",", ".")).fullpath)
 win.width = img.width
 img:center()
 img.y = 20
@@ -78,7 +76,7 @@ function x:onClick()
 end
 
 local button = ui.Button(win, caption.." LuaRT "..VERSION.." for "..(arg[-1]:find("x64") and "x64" or "x86"))
-button:loadicon(File("img/install.ico"))
+button:loadicon(sys.File("img/install.ico"))
 button.cursor = "hand"
 button:center()
 button.y = win.height-40
@@ -150,7 +148,7 @@ function button:onClick()
         label.width = bar.width
         label.y = bar.y + bar.height + 3
         bar.position = 0
-        local archive = compression.Zip(File("luaRT.zip"))
+        local archive = compression.Zip(sys.File("luaRT.zip"))
         bar.range = {0, archive.count}
         local size = 0
         for entry, isdir in each(archive) do

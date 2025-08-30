@@ -2,11 +2,10 @@
 --  LuaRT updater
 --  Check and install LuaRT updates
 --
+
 local net = require "net" 
 local ui = require "ui"
 local compression = require "compression"
-
-local File = embed == nil and sys.File or embed.File
 
 local exe = sys.File(arg[-1])
 local tmpexe = sys.File(sys.env.TEMP..'\\'..exe.name)
@@ -32,7 +31,7 @@ elseif ui.dpi >= 1.75 then
     factor = 2
 end
 
-local img = ui.Picture(win, File(("logox"..factor..".png"):gsub(",", ".")).fullpath)
+local img = ui.Picture(win, sys.File(("logox"..factor..".png"):gsub(",", ".")).fullpath)
 win.width = img.width
 img:center()
 img.y = 20
@@ -67,7 +66,7 @@ elseif ui.dpi >= 1.75 then
 end
 
 local button = ui.Button(win, "")
-button:loadicon(File("install.ico"))
+button:loadicon(sys.File("install.ico"))
 button.cursor = "hand"
 button:hide()
 
