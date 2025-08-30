@@ -1,8 +1,8 @@
-local File =  embed == nil and sys.File  or embed.File
+
 local icon
 
 local win = ui.Window("rtc - Lua script to executable compiler", "fixed", 400, 300, "fixed")
-win:loadicon(File("img/rtc.ico"))
+win:loadicon(sys.File("img/rtc.ico"))
 
 local function setLabelBtn(widget, text, x, y, icon, tooltip, nobtn, delta) 
     widget.label = ui.Label(win, text, x, y)
@@ -17,8 +17,8 @@ local function setLabelBtn(widget, text, x, y, icon, tooltip, nobtn, delta)
     return widget
 end
 
-local script = setLabelBtn(ui.Entry(win, "", 10, 10, 260), "Main Lua script : ", 10, 26, File("img/open.ico"), "The Lua script to be run when the generated executable starts")
-local embed = setLabelBtn(ui.Entry(win, "", 10, 10, 260), "Embed directory: ", 10, 52, File("img/open.ico"), "The content of the directory will be embedded in the generated executable")
+local script = setLabelBtn(ui.Entry(win, "", 10, 10, 260), "Main Lua script : ", 10, 26, sys.File("img/open.ico"), "The Lua script to be run when the generated executable starts")
+local embed = setLabelBtn(ui.Entry(win, "", 10, 10, 260), "Embed directory: ", 10, 52, sys.File("img/open.ico"), "The content of the directory will be embedded in the generated executable")
 local modules = setLabelBtn(ui.Entry(win, "", 10, 10, 260), "Embed modules: ", 10, 78, nil, "modules to be embedded, by name, separated with a space", true, 0)
 local output = setLabelBtn(ui.Entry(win, "", 10, 10, 260), "Executable : ", 10, 104, nil, "The generated executable name", true, 26)
 
@@ -40,7 +40,7 @@ iconBtn.hastext = false
 local execBtn = ui.Button(win, "Generate executable")
 execBtn:center()
 execBtn.y = group.y + group.height +15
-execBtn:loadicon(File("img/exec.ico"))
+execBtn:loadicon(sys.File("img/exec.ico"))
 
 function iconBtn:onClick()
     local f = ui.opendialog("Select an icon", false, "ICO files (*.ico)|*.ico")
@@ -55,7 +55,7 @@ end
 function update_icon()
     target = radioconsole.checked and "luart" or "wluart"
     if icon == nil then
-        iconBtn:loadicon(File(target..".exe"))
+        iconBtn:loadicon(sys.File(target..".exe"))
     end
 end
 

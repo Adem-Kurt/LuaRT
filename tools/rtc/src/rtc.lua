@@ -17,6 +17,7 @@ static = false
 
 local libs = {}
 local files = {}
+local libpaths = { sys.File(arg[-1]).path.."..\\modules\\" }
 
 if (arg[-1]:find("wrtc") or arg[-1]:find("wluart")) == nil then
 	console = require "console"
@@ -34,6 +35,7 @@ usage:	rtc.exe [-s][-c][-w][-i icon][-o output] [-lmodname] [directory] main.lua
 	-i icon		set executable icon (expects an .ico file)
 	-o output	set executable name to 'output'
 	-lmodname	link the LuaRT binary module 'modname.dll'
+	-Lmoddir	add a new search path for modules
 	directory	the content of the directory to be embedded in the executable
 	main.lua   	the Lua script to be executed]])
 		sys.exit()
@@ -61,6 +63,8 @@ usage:	rtc.exe [-s][-c][-w][-i icon][-o output] [-lmodname] [directory] main.lua
 			static = true
 		elseif option:find("-l") == 1 then
 			libs[#libs+1] = option:match("%-l(%w+)")
+		elseif option:find("-L") == 1 then
+			libpaths[#libpaths+1] = option:sub(3, -1)
 		elseif option:usub(1,1) == "-" then 
 			print("invalid option "..option)
 			sys.exit(-1)
@@ -105,8 +109,9 @@ end
 if embed == nil then
 	target = sys.File(sys.File(arg[-1]).path..target)
 else
-	target = embed.File(target)
+	target = sys.File(target)
 end
+
 
 if not target.exists then
     error("Fatal error: compilation failed, check your LuaRT installation")
@@ -146,18 +151,25 @@ fname:remove()
 
 local ext = static and "-static.dll" or ".dll"
 
+
 for lib in each(libs) do
-	local libpath = sys.Directory(sys.File(arg[-1]).path.."..\\modules\\").exists and sys.File(arg[-1]).path.."..\\modules\\"..lib or sys.File(arg[-1]).path.."modules\\"..lib
-	local moddir = sys.Directory(libpath)
-	if moddir.exists then
-		for entry in each(moddir) do
+	local libpath
+	for path in each(libpaths) do
+		libpath = path.."/"..lib
+		if sys.Directory(libpath).exists then
+			break
+		end
+	end
+	local _moddir = sys.Directory(libpath or "")
+	if _moddir.exists then
+		for entry in each(_moddir) do
 			if type(entry) == "File" then
-				if entry.extension == ".dll"  then
+				if entry.extension == ".dll" and entry.name:find("^"..lib)  then
 					if string.lower(entry.name) == lib..(static and ".dll" or "-static.dll") then
 						goto continue
 					end
+					print("Linking "..lib.." module")
 				end
-				print("Linking "..lib.." module")
 				z:write(entry.fullpath, "__modules/"..lib.."/"..entry.name)
 			end
 ::continue::			
@@ -165,7 +177,7 @@ for lib in each(libs) do
 	else
 		libfile = sys.File(lib..ext)
 		if not libfile.exists then
-			error("error: module '"..lib.."' not found")
+			error("Module '"..lib.."' not found")
 		else
 			print("Linking "..lib.." module")
 			z:write(libfile)

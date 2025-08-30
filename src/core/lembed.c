@@ -133,11 +133,28 @@ static int searcher_embedded_Lua (lua_State *L) {
 
 extern BOOL make_path(wchar_t *folder);
 
+static char* get_directory(const char* filepath) {
+  const char* last_sep = strrchr(filepath, '/');
+  if (!last_sep)
+    last_sep = strrchr(filepath, '\\');
+
+  if (!last_sep)
+    return NULL;
+
+  size_t len = last_sep - filepath;
+  char* dir = (char*)malloc(len + 1);
+  if (dir) {
+      strncpy(dir, filepath, len);
+      dir[len] = '\0';
+  }
+  return dir;
+}
+
 static int searcher_embedded_C (lua_State *L) {
   const char *name = luaL_checkstring(L, 1);
   const char *filename = findfile(L, name, "cpath", "/");
-  if (filename) {
-found:    
+  if (filename) { 
+found:
     lua_getfield(L, LUA_REGISTRYINDEX, CMEMLIBS);
     lua_pushwstring(L, temp_path);
     lua_pushstring(L, filename);
@@ -146,7 +163,8 @@ found:
       wchar_t *tmp = lua_towstring(L, -1);
       if ((make_path(tmp) && (zip_entry_fread(fs, lua_tostring(L, -1)) == 0))) {
         HMODULE hm;
-              
+        char *modpath = get_directory(filename);
+        
         if ( (hm = LoadLibraryExW(tmp, NULL, DONT_RESOLVE_DLL_REFERENCES)) ) {
           ULONG size;
           PIMAGE_IMPORT_DESCRIPTOR importDescriptor = (PIMAGE_IMPORT_DESCRIPTOR)ImageDirectoryEntryToDataEx(hm, TRUE, IMAGE_DIRECTORY_ENTRY_IMPORT, &size, NULL);
@@ -154,24 +172,20 @@ found:
           if (importDescriptor)
             while (importDescriptor->Characteristics && importDescriptor->Name) {
                 PSTR importName = (PSTR)((PBYTE)hm + importDescriptor->Name);
-                if (zip_entry_open(fs, importName) == 0) {
-                  wchar_t *dllpath;
-                  lua_pushwstring(L, temp_path);
-                  lua_pushstring(L, importName);
-                  lua_concat(L, 2);
-                  dllpath = lua_towstring(L, -1);
-                  lua_pop(L, 1);
-                  if (GetFileAttributesW(dllpath) == INVALID_FILE_ATTRIBUTES) {
+                char modname[512];
+                char fname[512];
+                wchar_t dllpath[512];
+                snprintf(modname, 512, "%s/%s", modpath, importName);
+                snprintf(fname, 512, "%ls\\%s", temp_path, importName);
+                _snwprintf(dllpath, 512, L"%ls\\%hs", temp_path, modpath);
+                if (zip_entry_open(fs, modname) == 0) {
                     make_path(dllpath); 
-                    zip_entry_fread(fs, lua_tostring(L, -1));
+                    zip_entry_fread(fs, fname);
                     zip_entry_close(fs);
-                  }
-                  free(dllpath);
                 }
                 importDescriptor++;
             }
           FreeLibrary(hm);
-          zip_entry_open(fs, filename);
           if ( (hm = LoadLibraryW(tmp)) ) {
             char funcname[MAX_PATH];
             _snprintf(funcname, MAX_PATH, "luaopen_%s", luaL_gsub(L, name, ".", "_"));
@@ -187,6 +201,7 @@ found:
             luaL_error(L, "error loading module '%s' from embedded file '%s' : %s", lua_tostring(L, 1), filename, lua_tostring(L, -1));
           }
         }
+        free(modpath);
       }
       free(tmp);
       zip_entry_close(fs);

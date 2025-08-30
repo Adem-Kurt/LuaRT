@@ -26,7 +26,7 @@ Build standalone Windows executables from your Lua scripts.
 - Dynamic executables (with `lua54.dll` dependency)
 - Embed any files with your executable, even Lua binary modules with seamless loading using `require()`
 - Loads DLL dependencies in embedded files transparently
-- Access embedded files seamlessly from your Lua scripts
+- Access embedded files seamlessly from your Lua scripts using `sys.File()`
 - Deploy your applications easily without the need to install Lua
 
 ## Installation
@@ -55,6 +55,7 @@ usage:	rtc.exe [-s][-c][-w][-i icon][-o output] [-lmodname] [directory] main.lua
 	-w		create executable for Windows desktop
 	-i icon		set executable icon (expects an .ico file)
 	-o output	set executable name to 'output'
+	-Lmoddir	add a new search path for modules
 	-lmodname	link the LuaRT binary module 'modname.dll'
 	directory	the content of the directory to be embedded in the executable
 	main.lua   	the Lua script to be executed
@@ -80,7 +81,7 @@ See the [LuaRT Zip object documentation](https://www.luart.org/doc/compression/Z
   
 #### Requiring Lua modules from embedded files
 
-To require a LuaRT script file in the embedded files, use **require** with the name of the module. You can require Lua modules, and binary modules (DLL) without the need to extract first (please note that in-memory binary modules loading works only with dynamic executables and may not work for some modules).
+To require a LuaRT script file in the embedded files, use **require** with the name of the module. You can require Lua modules, and binary modules (DLL) without the need to extract first.
 
 ```lua
 -- require for the english.lua module, that must have been previously embedded with rtc 
