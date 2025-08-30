@@ -1,5 +1,5 @@
 ﻿# | json module for LuaRT
-# | Luart.org, Copyright (c) Tine Samir 2024.
+# | Luart.org, Copyright (c) Tine Samir 2025.
 # | See Copyright Notice in LICENSE.TXT
 # |--------------------------------------------------------------
 # | Makefile
@@ -13,7 +13,12 @@ VERBOSE= >nul 2>&1
 
 MODULE=		json
 VERSION=	1.0
-SRC= 		src\json.obj
+SRC_C= 		src\json.c 
+SRC_CPP=	
+
+OBJ_CPP=    $(SRC_CPP:.cpp=.obj)
+OBJ_C=		$(SRC_C:.c=.obj)
+OBJ=		$(OBJ_CPP) $(OBJ_C)	
 
 LUALIB= "$(LUART_PATH)\lib\lua54.lib"
 CFLAGS = 
@@ -42,6 +47,7 @@ LIBS= $(LUALIB)
 RM= del /Q
 CP= copy /Y
 LD= link.exe
+MV = move /Y
 
 all: infomodule $(MODNAME).dll
 
@@ -51,26 +57,40 @@ static:
 debug:
 	@$(MAKE) /nologo "BUILD=debug"
 
-infomodule: 
+setup: infomodule $(MODNAME).dll
+	@-signtool sign /sha1 "4b47f71722cd511bc491e11f5a4130cb779f98f6" /tr http://time.certum.pl /td sha256  /fd sha256 /v $(LUART_PATH)\modules\$(MODULE)\*.dll $(VERBOSE)
+
+infomodule:  
 	@chcp 65001 >nul 2>&1
+
 !if "$(BUILD)" != "static"
 	@cmd /c echo.
 	@echo|set /p dummy="▸  Building module $(MODNAME) $(VERSION)	  "
 !endif
 
-.c.obj: 
-	@$(CC) $(CFLAGS) /c /Fo$@ $< $(VERBOSE)
+!if "$(SRC_C)" != ""
+compile_c:
+	@$(CC) $(CFLAGS) /c /MP /TC $(SRC_C) $(VERBOSE)
 	@echo|set /p dummy=$(PROGRESS)
+!else
+compile_c:
+!endif
 
-.cpp.obj: 
-	@$(CC) $(CFLAGS) /c /Fo$@ $< $(VERBOSE)
+!if "$(SRC_CPP)" != ""
+compile_cpp:
+	@$(CC) $(CFLAGS) /c /MP $(SRC_CPP) $(VERBOSE)
 	@echo|set /p dummy=$(PROGRESS)
+!else
+compile_cpp:
+!endif
 
-$(MODNAME).dll: $(SRC)
-	@$(LD) /DLL $(LDFLAGS) $(LIBS) $(SRC) /OUT:$@ $(VERBOSE)
+$(MODNAME).dll: compile_c compile_cpp
+	@-$(MV) *.obj src/  >nul 2>&1
+	@$(LD) /DLL $(LDFLAGS) $(OBJ) $(LIBS) /OUT:$@ $(VERBOSE)
+	@echo|set /p dummy=$(PROGRESS)
 	@-mkdir $(LUART_PATH)\modules\$(MODULE) >nul 2>&1
 	@$(CP) $@ $(LUART_PATH)\modules\$(MODULE) >nul 2>&1
-	@$(RM) $(SRC)
+	@$(RM) $(OBJ)
 !if "$(BUILD)" != "static"
 	@$(MAKE) /nologo static
 !endif
@@ -78,7 +98,7 @@ $(MODNAME).dll: $(SRC)
 clean:
 	@echo|set /p dummy="▸  Cleaning $(MODULE) module... "
 	@$(RM) $(MODULE)*.* >nul 2>&1
-	@$(RM) $(SRC) >nul 2>&1
+	@$(RM) $(OBJ) >nul 2>&1
 	@echo ✓
 	@-$(RM) $(LUART_PATH)\modules\$(MODULE)\$(MODULE).dll >nul 2>&1
 	@-$(RM) $(LUART_PATH)\modules\$(MODULE)\$(MODULE)-static.dll >nul 2>&1

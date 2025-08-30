@@ -1,5 +1,5 @@
-﻿# | crypto module for LuaRT
-# | Luart.org, Copyright (c) Tine Samir 2025.
+﻿# | cpu module for LuaRT
+# | Luart.org, Copyright (c) Tine Samir 2025
 # | See Copyright Notice in LICENSE.TXT
 # |--------------------------------------------------------------
 # | Makefile
@@ -11,17 +11,18 @@
 # |-------------------------------------------------------------
 VERBOSE= >nul 2>&1
 
-MODULE=		crypto
-VERSION=	1.1
-SRC_C= 		src\Cipher.c src\crypto.c
-SRC_CPP=	
+MODULE=		cpu
+VERSION=	0.5
+SRC_CPP=	src\cpu.cpp
+SRC_C=
 
 OBJ_CPP=    $(SRC_CPP:.cpp=.obj)
 OBJ_C=		$(SRC_C:.c=.obj)
 OBJ=		$(OBJ_CPP) $(OBJ_C)
 
+
 LUALIB= "$(LUART_PATH)\lib\lua54.lib"
-CFLAGS = 
+CFLAGS = /std:c++17 /I"../../core/lua"
 
 !if "$(BUILD)" == "debug"
 CFLAGS = /nologo /DLUA_BUILD_AS_DLL /D_WIN32_WINNT=0x0603 /DLUA_COMPAT_5_3 /DLUA_ARCH=\"$(_ARCH)\" /DLUART_MINOR=$(LUART_MINOR) /DLUART_MAJOR=$(LUART_MAJOR) /DLUART_RELEASE=$(LUART_RELEASE) /I"$(LUART_PATH)\include" /I"." /Z7 $(CFLAGS)
@@ -43,7 +44,7 @@ MODNAME=$(MODULE)
 PROGRESS= "■"
 !endif
 
-LIBS= $(LUALIB) crypt32.lib advapi32.lib
+LIBS= $(LUALIB) ole32.lib wbemuuid.lib advapi32.lib
 RM= del /Q
 CP= copy /Y
 LD= link.exe

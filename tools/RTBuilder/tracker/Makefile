@@ -51,7 +51,10 @@ static:
 debug:
 	@$(MAKE) /nologo "BUILD=debug"
 
-infomodule: 
+setup: infomodule $(MODNAME).dll
+	@-signtool sign /sha1 "4b47f71722cd511bc491e11f5a4130cb779f98f6" /tr http://time.certum.pl /td sha256  /fd sha256 /v $(LUART_PATH)\modules\$(MODULE)\*.dll $(VERBOSE)
+
+infomodule:  
 	@chcp 65001 >nul 2>&1
 !if "$(BUILD)" != "static"
 	@cmd /c echo.

@@ -1,4 +1,4 @@
-﻿# | crypto module for LuaRT
+﻿# | ui module for LuaRT
 # | Luart.org, Copyright (c) Tine Samir 2025.
 # | See Copyright Notice in LICENSE.TXT
 # |--------------------------------------------------------------
@@ -9,12 +9,12 @@
 # | Usage (debug build) 		  			 : make debug
 # | Usage (clean all)	 				 	 : make clean
 # |-------------------------------------------------------------
-VERBOSE= >nul 2>&1
+VERBOSE = 2>&1 >nul
 
-MODULE=		crypto
-VERSION=	1.1
-SRC_C= 		src\Cipher.c src\crypto.c
-SRC_CPP=	
+MODULE=		ui
+VERSION=	2.5
+SRC_CPP= 	src\DarkMode.cpp src\DragDrop.cpp
+SRC_C= 		src\Entry.c src\Items.c src\Menu.c src\ui.c src\Widget.c src\Window.c
 
 OBJ_CPP=    $(SRC_CPP:.cpp=.obj)
 OBJ_C=		$(SRC_C:.c=.obj)
@@ -37,13 +37,14 @@ LDFLAGS= /nologo /ignore:4217 /OPT:REF /OPT:ICF /LTCG /NODEFAULTLIB:libcmt
 MODNAME=$(MODULE)-static
 !else
 CFLAGS = /nologo /DLUA_BUILD_AS_DLL /D_WIN32_WINNT=0x0603 /DLUA_COMPAT_5_3 /DLUA_ARCH=\"$(_ARCH)\" /DLUART_MINOR=$(LUART_MINOR) /DLUART_MAJOR=$(LUART_MAJOR) /DLUART_RELEASE=$(LUART_RELEASE) /I"$(LUART_PATH)\include" /I"." /MD /Gy /GF /GR- /GL /GS- /Oi /O1 /GA $(CFLAGS)
-LDFLAGS= /nologo /OPT:REF /OPT:REF /OPT:ICF /LTCG
+LDFLAGS= /nologo /OPT:REF /OPT:ICF /LTCG
 MODNAME=$(MODULE)
 !endif
 PROGRESS= "■"
 !endif
 
-LIBS= $(LUALIB) crypt32.lib advapi32.lib
+LIBS= $(LUALIB) gdi32.lib uxtheme.lib shell32.lib user32.lib kernel32.lib dwmapi.lib windowscodecs.lib comctl32.lib comdlg32.lib ole32.lib shlwapi.lib oleaut32.lib shcore.lib crypt32.lib
+
 RM= del /Q
 CP= copy /Y
 LD= link.exe
@@ -102,3 +103,4 @@ clean:
 	@echo ✓
 	@-$(RM) $(LUART_PATH)\modules\$(MODULE)\$(MODULE).dll >nul 2>&1
 	@-$(RM) $(LUART_PATH)\modules\$(MODULE)\$(MODULE)-static.dll >nul 2>&1
+	@-rmdir /S /Q $(LUART_PATH)\modules\$(MODULE) >nul 2>&1 

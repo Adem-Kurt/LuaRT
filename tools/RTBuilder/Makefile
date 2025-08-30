@@ -13,7 +13,7 @@
 TARGET=		RTBuilder
 VERSION=	0.5
 SRC= 		src\main.wlua src\version.lua src\dump.lua src\widgets.wlua  
-LIBS=		-ltracker -ljson
+LIBS=		-ltracker -ljson -lui
 
 ICON = resources\RTBuilder.ico
 
@@ -32,7 +32,11 @@ package: $(TARGET).exe infopackage
 	"@$(LUART_PATH)"\bin\luart.exe contrib\package.lua
 	@cmd /c echo.
 
-infomodule: 
+setup: $(TARGET).exe
+	@-signtool sign /sha1 "4b47f71722cd511bc491e11f5a4130cb779f98f6" /tr http://time.certum.pl /td sha256  /fd sha256 /v tracker.dll $(VERBOSE)
+	@-signtool sign /sha1 "4b47f71722cd511bc491e11f5a4130cb779f98f6" /tr http://time.certum.pl /td sha256  /fd sha256 /v RTBuilder.exe $(VERBOSE)
+
+infomodule:  
 	@chcp 65001 >nul 2>&1
 	@cmd /c echo.
 	@echo|set /p dummy="▸  Building $(TARGET).exe $(VERSION)	  "

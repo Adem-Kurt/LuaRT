@@ -1,5 +1,5 @@
-﻿# | crypto module for LuaRT
-# | Luart.org, Copyright (c) Tine Samir 2025.
+﻿# | wifi module for LuaRT
+# | Luart.org, Copyright (c) Tine Samir 2025
 # | See Copyright Notice in LICENSE.TXT
 # |--------------------------------------------------------------
 # | Makefile
@@ -11,10 +11,10 @@
 # |-------------------------------------------------------------
 VERBOSE= >nul 2>&1
 
-MODULE=		crypto
-VERSION=	1.1
-SRC_C= 		src\Cipher.c src\crypto.c
-SRC_CPP=	
+MODULE=		wifi
+VERSION=	0.5
+SRC_CPP= 	src\wifi.cpp
+SRC_C= 
 
 OBJ_CPP=    $(SRC_CPP:.cpp=.obj)
 OBJ_C=		$(SRC_C:.c=.obj)
@@ -24,7 +24,7 @@ LUALIB= "$(LUART_PATH)\lib\lua54.lib"
 CFLAGS = 
 
 !if "$(BUILD)" == "debug"
-CFLAGS = /nologo /DLUA_BUILD_AS_DLL /D_WIN32_WINNT=0x0603 /DLUA_COMPAT_5_3 /DLUA_ARCH=\"$(_ARCH)\" /DLUART_MINOR=$(LUART_MINOR) /DLUART_MAJOR=$(LUART_MAJOR) /DLUART_RELEASE=$(LUART_RELEASE) /I"$(LUART_PATH)\include" /I"." /Z7 $(CFLAGS)
+CFLAGS = /nologo /DLUA_BUILD_AS_DLL /D_WIN32_WINNT=0x0603 /DLUA_COMPAT_5_3 /DLUA_ARCH=\"$(_ARCH)\" /DLUART_MINOR=$(LUART_MINOR) /DLUART_MAJOR=$(LUART_MAJOR) /DLUART_RELEASE=$(LUART_RELEASE) /I"$(LUART_PATH)\include" /I"." /Z7 /EHsc
 LDFLAGS= /nologo /DEBUG 
 MODNAME=$(MODULE)
 VERBOSE=
@@ -32,18 +32,19 @@ PROGRESS=
 !else
 !if "$(BUILD)" == "static"
 LUALIB= "$(LUART_PATH)\lib\lua54-static.lib"
-CFLAGS = /nologo /DRTSTATIC /DLUA_BUILD_AS_DLL /D_WIN32_WINNT=0x0603 /DLUA_COMPAT_5_3 /DLUA_ARCH=\"$(_ARCH)\" /DLUART_MINOR=$(LUART_MINOR) /DLUART_MAJOR=$(LUART_MAJOR) /DLUART_RELEASE=$(LUART_RELEASE) /I"$(LUART_PATH)\include" /I"." /MD /Gy /GF /GR- /GL /GS- /Oi /O1 /GA $(CFLAGS)
+CFLAGS = /nologo /DRTSTATIC /DLUA_BUILD_AS_DLL /D_WIN32_WINNT=0x0603 /DLUA_COMPAT_5_3 /DLUA_ARCH=\"$(_ARCH)\" /DLUART_MINOR=$(LUART_MINOR) /DLUART_MAJOR=$(LUART_MAJOR) /DLUART_RELEASE=$(LUART_RELEASE) /I"$(LUART_PATH)\include" /I"." /MD /Gy /GF /GR- /GL /GS- /Oi /O1 /GA /EHsc
 LDFLAGS= /nologo /ignore:4217 /OPT:REF /OPT:ICF /LTCG /NODEFAULTLIB:libcmt
 MODNAME=$(MODULE)-static
 !else
-CFLAGS = /nologo /DLUA_BUILD_AS_DLL /D_WIN32_WINNT=0x0603 /DLUA_COMPAT_5_3 /DLUA_ARCH=\"$(_ARCH)\" /DLUART_MINOR=$(LUART_MINOR) /DLUART_MAJOR=$(LUART_MAJOR) /DLUART_RELEASE=$(LUART_RELEASE) /I"$(LUART_PATH)\include" /I"." /MD /Gy /GF /GR- /GL /GS- /Oi /O1 /GA $(CFLAGS)
+CFLAGS = /nologo /DLUA_BUILD_AS_DLL /D_WIN32_WINNT=0x0603 /DLUA_COMPAT_5_3 /DLUA_ARCH=\"$(_ARCH)\" /DLUART_MINOR=$(LUART_MINOR) /DLUART_MAJOR=$(LUART_MAJOR) /DLUART_RELEASE=$(LUART_RELEASE) /I"$(LUART_PATH)\include" /I"." /MD /Gy /GF /GR- /GL /GS- /Oi /O1 /GA /EHsc
 LDFLAGS= /nologo /OPT:REF /OPT:REF /OPT:ICF /LTCG
 MODNAME=$(MODULE)
 !endif
 PROGRESS= "■"
 !endif
 
-LIBS= $(LUALIB) crypt32.lib advapi32.lib
+LIBS= $(LUALIB) wlanapi.lib ole32.lib uuid.lib
+
 RM= del /Q
 CP= copy /Y
 LD= link.exe
@@ -102,3 +103,4 @@ clean:
 	@echo ✓
 	@-$(RM) $(LUART_PATH)\modules\$(MODULE)\$(MODULE).dll >nul 2>&1
 	@-$(RM) $(LUART_PATH)\modules\$(MODULE)\$(MODULE)-static.dll >nul 2>&1
+	@-rmdir /S /Q $(LUART_PATH)\modules\$(MODULE) >nul 2>&1 
