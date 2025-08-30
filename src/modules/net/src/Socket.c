@@ -383,7 +383,7 @@ done:	if (done == 0)
 			lua_pushboolean(L, FALSE);
 		else {
 			lua_pushlstring(L, sb->buffer, done);		
-			free(sb->buffer);
+			lua_pushinstance(L, Buffer, 1);
 		}
 	}
     return 1;
@@ -396,7 +396,8 @@ LUA_METHOD(Socket, recv) {
 	
 	s->read = FALSE;
 	if ( !s->blocking ) {
-		return lua_pushtask(L, RecvTaskContinue, new_SocketBuffer(L, s, size), gc_SocketBuffer);	
+		lua_pushtask(L, RecvTaskContinue, new_SocketBuffer(L, s, size), gc_SocketBuffer);	
+		return 1;
 	}
 	buff = malloc(size);
 	if ( s->tls ) {
@@ -407,9 +408,10 @@ LUA_METHOD(Socket, recv) {
 		done = 0;
 	if (done == 0)
 error:	lua_pushboolean(L, FALSE);
-	else
+	else {
 		lua_pushlstring(L, buff, done);
-	
+		lua_pushinstance(L, Buffer, 1);
+	}
 	free(buff);
 	return 1;
 }
@@ -494,7 +496,8 @@ LUA_METHOD(Socket, send) {
 	if (!s->blocking) {
 		SocketBuffer *sb = new_SocketBuffer(L, s, len);
 		strncpy(sb->buffer, str, len);
-		return lua_pushtask(L, SendTaskContinue, sb, gc_SocketBuffer);
+		lua_pushtask(L, SendTaskContinue, sb, gc_SocketBuffer);
+		return 1;
 	}	
 	while(len) {
 		str += total;
@@ -643,8 +646,9 @@ static int ConnectTaskContinue(lua_State* L, int status, lua_KContext ctx) {
 LUA_METHOD(Socket, connect) {
 	Socket *s = lua_self(L, 1, Socket);
 	if (!s->blocking)
-		return lua_pushtask(L, ConnectTaskContinue, s, NULL);	
-	lua_pushboolean(L, connect(s->sock, (SOCKADDR*)&s->addr, s->sizeaddr) == 0);
+		lua_pushtask(L, ConnectTaskContinue, s, NULL);	
+	else
+		lua_pushboolean(L, connect(s->sock, (SOCKADDR*)&s->addr, s->sizeaddr) == 0);
 	return 1;	
 }
 
@@ -702,7 +706,7 @@ LUA_METHOD(Socket, accept) {
 
 	s->read = FALSE;
 	if (!s->blocking)
-		return lua_pushtask(L, AcceptTaskContinue, s, NULL);	
+		lua_pushtask(L, AcceptTaskContinue, s, NULL);	
 	else {
 		SOCKADDR_STORAGE addr;
 		SOCKADDR_STORAGE *paddr = &addr;

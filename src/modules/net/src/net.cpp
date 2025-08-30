@@ -23,6 +23,7 @@
 #include <sensapi.h>
 #include <time.h>
 #include <iphlpapi.h>
+#include <vector>
 
 static WSADATA wsadata;
 static const char *ip_type[] = {"ipv4", "ipv6", NULL};
@@ -248,6 +249,19 @@ LUA_METHOD(net, adapters) {
 	return 0;
 }
 
+LUA_METHOD(net, urlencode) {
+	int len;
+	wchar_t *url = lua_tolwstring(L, 1, &len);
+	DWORD bufferSize = len * sizeof(wchar_t*) * 3 + 1;
+    std::vector<wchar_t> buffer(bufferSize);
+
+	if (SUCCEEDED(UrlEscapeW(url, buffer.data(), &bufferSize, URL_ESCAPE_UNSAFE)))
+		lua_pushwstring(L, buffer.data());
+	else lua_pushnil(L);
+	free(url);
+	return 1;
+}
+
 LUA_PROPERTY_GET(net, ipv6) {
 	return dns(L, "localhost", DNS_TYPE_AAAA);
 }
@@ -271,6 +285,7 @@ static const luaL_Reg netlib[] = {
 	{"reverse",		net_reverse},
 	{"urlparse",	net_urlparse},
 	{"adapters",	net_adapters},
+	{"urlencode",	net_urlencode},	
 	{NULL, NULL}
 };
 
