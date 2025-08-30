@@ -140,9 +140,9 @@ LUA_METHOD(json, load)
         result = 1;
       }
       free(src);
+      fclose(f);
     }
     free(fname);
-    fclose(f);
     return result;
 }
 //------------------------------------ json.encode() function
