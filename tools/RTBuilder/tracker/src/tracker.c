@@ -16,6 +16,9 @@
 #define SizeBottomLeft    0xF007
 #define DragMove          0xF012
 
+UIInterface *ui = NULL;
+luart_type TWidget = 0;
+
 static LPCSTR cursors[] = { IDC_SIZEWE, IDC_SIZEWE, IDC_SIZENS, IDC_SIZENWSE, IDC_SIZENESW, IDC_SIZENS, IDC_SIZENESW, IDC_SIZENWSE, IDC_SIZEWE, IDC_SIZEALL, IDC_ARROW };
 static HCURSOR hcursors[11];
 static luart_type TTracker;
@@ -173,15 +176,15 @@ LRESULT CALLBACK TrackerProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam, 
               return (INT_PTR)GetStockBrush(NULL_BRUSH);        
            }
     }
-  return lua_widgetproc(hwnd, msg, wParam, lParam, 0, 0);
+  return ui->lua_widgetproc(hwnd, msg, wParam, lParam, 0, 0);
 }
 
 LUA_CONSTRUCTOR(Tracker) {
   Widget *wp, *w;
   double dpi;
   BOOL isdark;
-	lua_widgetinitialize(L, &wp, &dpi, &isdark);
-  w = lua_widgetconstructor(L, CreateWindowExW(WS_EX_COMPOSITED, L"Window", NULL, WS_CHILD | WS_CLIPCHILDREN | WS_CLIPSIBLINGS, 0, 0, 0, 0, wp->handle, NULL, GetModuleHandle(NULL), NULL), TTracker, wp, TrackerProc);
+	ui->lua_widgetinitialize(L, &wp, &dpi, &isdark);
+  w = ui->lua_widgetconstructor(L, CreateWindowExW(WS_EX_COMPOSITED, L"Window", NULL, WS_CHILD | WS_CLIPCHILDREN | WS_CLIPSIBLINGS, 0, 0, 0, 0, wp->handle, NULL, GetModuleHandle(NULL), NULL), TTracker, wp, TrackerProc);
   return 1;
 }
 
@@ -276,7 +279,7 @@ LUA_PROPERTY_GET(Tracker, height) {
 
 LUA_METHOD(Tracker, __gc) {
   Tracker_stop(L);
-  free(lua_widgetdestructor(L));
+  free(ui->lua_widgetdestructor(L));
   return 0;
 }
 
@@ -302,10 +305,14 @@ static luaL_Reg Tracker_metafields[] = {
 int __declspec(dllexport) luaopen_tracker(lua_State *L)
 {
   luaL_require(L, "ui");
-  lua_regwidgetmt(L, Tracker, WIDGET_METHODS, FALSE, FALSE, FALSE, FALSE, FALSE);
+  luaL_getmetafield(L, -1, "__interface");
+  ui = (UIInterface *)lua_touserdata(L, -1);
+  lua_pop(L, 1);
+  TWidget = ui->TWidget;
+  ui->lua_regwidgetmt(L, Tracker, ui->WIDGET_METHODS, FALSE, FALSE, FALSE, FALSE, FALSE);
   luaL_setrawfuncs(L, Tracker_methods);
-  onDelete = lua_registerevent(L, NULL, event_onDelete);
-  onTrack = lua_registerevent(L, NULL, event_onTrack);
+  onDelete = ui->lua_registerevent(L, NULL, event_onDelete);
+  onTrack = ui->lua_registerevent(L, NULL, event_onTrack);
   for (int i = 0; i < 11; i++)
     hcursors[i] = LoadCursor(NULL, cursors[i]);
   return 0;
