@@ -15,6 +15,9 @@
 #include <vector>
 #include <memory>
 
+extern UIInterface *ui;
+extern luart_type TWidget;
+
 extern UINT onReady, onMessage, onLoaded, onFullscreen;
 extern wchar_t *ErrorFromHR(HRESULT errorCode);
 wchar_t *toUTF16(const char *s);

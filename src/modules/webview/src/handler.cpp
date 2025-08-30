@@ -84,7 +84,7 @@ WebviewHandler::WebviewHandler(HWND h, const char *URL, const char *args) {
 					this->webview2->AddWebResourceRequestedFilter(NULL, COREWEBVIEW2_WEB_RESOURCE_CONTEXT_ALL);
 					if (SUCCEEDED(this->webview3->get_Profile(&profile))) {
 						BOOL isDark;
-						lua_uigetinfo(NULL, &isDark);
+						ui->lua_uigetinfo(NULL, &isDark);
 						profile->put_PreferredColorScheme(isDark ? COREWEBVIEW2_PREFERRED_COLOR_SCHEME_DARK : COREWEBVIEW2_PREFERRED_COLOR_SCHEME_LIGHT);
 						profile->Release();						
 					}

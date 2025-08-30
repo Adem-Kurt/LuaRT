@@ -17,11 +17,14 @@
 
 #include <windows.h>
 #include "handler.h"
+#include <Widget.h>
 
 #include <wrl.h>
 
 using namespace Microsoft::WRL;
 
+UIInterface *ui = NULL;
+luart_type TWidget = 0;
 
 //--- Webview type
 static luart_type TWebview;
@@ -35,7 +38,7 @@ LRESULT CALLBACK WebviewProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam,
 		(static_cast<WebviewHandler*>(((Widget *)GetWindowLongPtrA(hwnd, GWLP_USERDATA))->user))->Resize();
 	else if ((uMsg == WM_SETTINGCHANGE)) {
 		WebviewHandler *wv = (WebviewHandler*)((Widget*)GetWindowLongPtrA(hwnd, GWLP_USERDATA))->user;
-		if (wv->webview3) {
+		if (wv && wv->webview3) {
 			ICoreWebView2Profile *profile;
 			if (SUCCEEDED(wv->webview3->get_Profile(&profile))) {
 				profile->put_PreferredColorScheme(lParam ? COREWEBVIEW2_PREFERRED_COLOR_SCHEME_DARK : COREWEBVIEW2_PREFERRED_COLOR_SCHEME_LIGHT);
@@ -45,7 +48,7 @@ LRESULT CALLBACK WebviewProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam,
 		}
 		return 0;
 	}
-	return lua_widgetproc(hwnd, uMsg, wParam, lParam, 0, 0);
+	return ui->lua_widgetproc(hwnd, uMsg, wParam, lParam, 0, 0);
 }
 
 //------------------------------------ Webview constructor
@@ -65,11 +68,13 @@ LUA_CONSTRUCTOR(Webview)
 	BOOL isdark;
     WebviewHandler *wv;
 	int i = lua_istable(L, 3) ? 4 : 3;
-    HWND h, hParent = (HWND)lua_widgetinitialize(L, &wp, &dpi, &isdark);     
+    HWND h, hParent = (HWND)ui->lua_widgetinitialize(L, &wp, &dpi, &isdark);     
     h = CreateWindowExW(0, L"Window", NULL, WS_VISIBLE | WS_CHILD, (int)luaL_optinteger(L, i, 0)*dpi, (int)luaL_optinteger(L, i+1, 0)*dpi, (int)luaL_optinteger(L, i+2, 320)*dpi, (int)luaL_optinteger(L, i+3, 240)*dpi, hParent, 0, GetModuleHandle(NULL),  NULL);
 	wv = i == 3 ? new WebviewHandler(h, "", NULL) : new WebviewHandler(h, get_argstrfield(L, "url", ""), get_argstrfield(L, "options", ""));
-    w = lua_widgetconstructor(L, h, TWebview, wp, (SUBCLASSPROC)WebviewProc);
+    w = ui->lua_widgetconstructor(L, h, TWebview, wp, (SUBCLASSPROC)WebviewProc);
     w->user = wv;
+	if (isdark)
+		w->brush = GetSysColorBrush(BLACK_BRUSH);
 	wv->archive = (zip_t *)luaL_embedopen(L);
     return 1;
 }
@@ -620,7 +625,7 @@ LUA_PROPERTY_SET(Webview, useragent) {
 }
 
 LUA_METHOD(Webview, __gc) {
-  Widget *w = lua_widgetdestructor(L);
+  Widget *w = ui->lua_widgetdestructor(L);
   delete (WebviewHandler *)w->user;
   free(w);
   return 0;
@@ -688,14 +693,18 @@ int event__onThemeChange(lua_State *L, Widget *w, MSG *msg) {
 
 extern "C" {
 	extern int __declspec(dllexport) luaopen_webview(lua_State *L) {
-		onReady = lua_registerevent(L, NULL, event_onReady);
-		onMessage = lua_registerevent(L, NULL, event_onMessage);
-		onLoaded = lua_registerevent(L, NULL, event_onLoaded);
-		onFullscreen = lua_registerevent(L, NULL, event_onFullscreen);
-		_onThemeChange = lua_registerevent(L, NULL, event__onThemeChange);	
-		luaL_require(L, "ui");
-		lua_regwidgetmt(L, Webview, WIDGET_METHODS, FALSE, FALSE, FALSE, FALSE, FALSE);
+		luaL_require(L, "ui");  
+		luaL_getmetafield(L, -1, "__interface");
+        ui = (UIInterface *)lua_touserdata(L, -1);
+        lua_pop(L, 1);
+        TWidget = ui->TWidget;
+        ui->lua_regwidgetmt(L, Webview, ui->WIDGET_METHODS, FALSE, FALSE, FALSE, FALSE, FALSE);
 		luaL_setrawfuncs(L, Webview_methods);
+		onReady = ui->lua_registerevent(L, NULL, event_onReady);
+		onMessage = ui->lua_registerevent(L, NULL, event_onMessage);
+		onLoaded = ui->lua_registerevent(L, NULL, event_onLoaded);
+		onFullscreen = ui->lua_registerevent(L, NULL, event_onFullscreen);
+		_onThemeChange = ui->lua_registerevent(L, NULL, event__onThemeChange);	
 		return 0;
 	}
 }
