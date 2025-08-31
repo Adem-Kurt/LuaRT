@@ -15,7 +15,7 @@
 
 extern "C" {
 	LUA_API luart_type TTask;
-	LUA_API DWORD SCHEDULE_INTERVAL = 10;
+	LUA_API lua_Integer idleThreshold = 1;
 }
 
 static std::list<Task *> Tasks;
@@ -136,33 +136,22 @@ BOOL resume_task(lua_State *L, Task *t, int args) {
 
 //-------- Task scheduler
 BOOL update_tasks(lua_State *L) {
-	static ULONGLONG lastTick = 0;
-    ULONGLONG now = GetTickCount64();
-    DWORD nextWake = INFINITE; // time in ms until next wake-up
-
-    // Sort tasks by priority (higher first)
     Tasks.sort([](Task* a, Task* b) {
         return a->priority > b->priority;
     });
 
-    // Wake up sleeping tasks if their time has come, checking in priority order
     for (auto it = Tasks.begin(); it != Tasks.end(); ++it) {
         Task *t = *it;
         if (t->status == TSleep) {
-            if (t->sleep <= now) {
+            if (t->sleep <= GetTickCount64()) {
                 t->sleep = 0;
                 t->status = TRunning;
-            } else {
-                DWORD remaining = (DWORD)(t->sleep - now);
-                if (remaining < nextWake)
-                    nextWake = remaining;
             }
         }
     }
 
-    now = GetTickCount64();
     for (auto &t : Tasks) {
-        if (t->timeout > 0 && now >= t->timeout)
+        if (t->timeout > 0 && GetTickCount64() >= t->timeout)
             t->status = TTerminated;
     }
 
@@ -195,25 +184,12 @@ BOOL update_tasks(lua_State *L) {
         } else
             ++it;
     }
-
-    // Recalculate nextWake after processing for accuracy
-    nextWake = INFINITE;
-    now = GetTickCount64();
-    for (auto &t : Tasks) {
-        if (t->status == TSleep && t->sleep > now) {
-            DWORD remaining = (DWORD)(t->sleep - now);
-            if (remaining < nextWake)
-                nextWake = remaining;
-        }
-    }
-	if (nextWake != INFINITE)
-		Sleep(nextWake);
-	else {
-		ULONGLONG elapsed = now - lastTick;
-		if (elapsed < SCHEDULE_INTERVAL)
-			Sleep(SCHEDULE_INTERVAL - elapsed);
-		lastTick = GetTickCount64(); 
-	}
+	static lua_Integer idle = idleThreshold;
+	if (idleThreshold)
+		if (--idle == 0) {
+			Sleep(1); 
+			idle = idleThreshold;
+		}
     return true;
 }
 

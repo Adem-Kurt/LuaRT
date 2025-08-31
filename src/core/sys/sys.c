@@ -38,7 +38,7 @@ wchar_t temp_path[MAX_PATH];
 static LARGE_INTEGER freq;
 static BOOL perfc, elevated;
 
-extern DWORD SCHEDULE_INTERVAL;
+extern lua_Integer idleThreshold;
 
 //-------------------------------------[ sys.clock() ]
 LUA_METHOD(sys, clock) {
@@ -197,13 +197,13 @@ LUA_PROPERTY_GET(sys, atexit) {
 	return 1;
 }
 
-LUA_PROPERTY_SET(sys, scheduleInterval) {
-	SCHEDULE_INTERVAL = (DWORD)luaL_checkinteger(L, 1);
+LUA_PROPERTY_SET(sys, idleThreshold) {
+	idleThreshold = (DWORD)luaL_checkinteger(L, 1);
 	return 0;
 }
 
-LUA_PROPERTY_GET(sys, scheduleInterval) {
-	lua_pushinteger(L, SCHEDULE_INTERVAL);
+LUA_PROPERTY_GET(sys, idleThreshold) {
+	lua_pushinteger(L, idleThreshold);
 	return 1;
 }
 
@@ -592,7 +592,7 @@ MODULE_PROPERTIES(sys)
 	READWRITE_PROPERTY(sys, atexit)
 	READWRITE_PROPERTY(sys, locale)
   	READONLY_PROPERTY(sys, language)
-  	READWRITE_PROPERTY(sys, scheduleInterval)
+  	READWRITE_PROPERTY(sys, idleThreshold)
 END
 
 LUAMOD_API int luaopen_sys(lua_State *L) {

@@ -8,6 +8,8 @@ local VERSION = require "version"
 Widgets = {}
 onContext = {}
 
+sys.idleThreshold = 0
+
 filename = nil
 modified = false
 formWindow = nil

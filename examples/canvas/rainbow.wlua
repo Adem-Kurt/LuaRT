@@ -17,7 +17,7 @@ local pos = 0
 local dir = 4
 
 -- Uncomment to get more speed, but more CPU usage
--- sys.scheduleInterval = 0
+-- sys.idleThreshold = 0
 
 function canvas:onPaint()
   self:begin()
