@@ -216,6 +216,7 @@ $(RTC_T): toolchain static ..\..\tools\rtc\src\rtc.lua ..\..\modules\ui\ui.dll
 	@$(CC) /c /DRTSTATIC /DRTWIN /DRTC $(CFLAGS) luart.c /Fowluart.obj $(VERBOSE)
 	@$(CC) /DRTSTATIC /DRTWIN /DRTC $(CFLAGS) luart.c resource.res $(BASE_O) $(LIBS_STATIC) /link /ignore:4217 $(LDFLAGS) /OUT:wluart-static.exe /SUBSYSTEM:windows $(VERBOSE)
 	@luart.exe ..\..\tools\rtc\src\rtc.lua ..\..\tools\rtc\src\rtc.lua -o wrtc.exe ..\..\tools\rtc\src -w -s -i ..\..\tools\rtc\src\img\rtc.ico -L..\..\..\modules\ -lui $(VERBOSE)
+	@$(CC) /c $(CFLAGS) lua\loadlib.c /Folua\loadlib.obj $(VERBOSE)
 	@echo|set /p dummy=$(PROGRESS)
 	@-copy /Y rtc.exe "$(DEST)\rtc.exe" >nul	
 	@-copy /Y wrtc.exe "$(DEST)\wrtc.exe" >nul	
@@ -233,10 +234,24 @@ buildtools: $(RTC_T)
 	@-signtool.exe sign /sha1 "4b47f71722cd511bc491e11f5a4130cb779f98f6" /tr http://time.certum.pl /td sha256  /fd sha256 /v "..\..\tools\QuickRT\QuickRT.exe" $(VERBOSE)
 	@-copy /Y ..\..\bin\lua54.dll ..\..\tools\QuickRT\lua54.dll >nul	
 	@echo|set /p dummy=$(PROGRESS)	
+# 	@-xcopy "..\..\tools\LuaRT-Studio\$(PLATFORM)\*" "..\..\tools\LuaRT-Studio" /s /e /Y >nul 2>&1
+# 	@-copy /Y ..\..\bin\luart.exe ..\..\tools\LuaRT-Studio\bin\luart.exe >nul
+# 	@-copy /Y ..\..\bin\wrtc.exe ..\..\tools\LuaRT-Studio\bin\wrtc.exe >nul
+# 	@-copy /Y ..\..\bin\lua54.dll ..\..\tools\LuaRT-Studio\bin\lua54.dll >nul	
+	@$(CC) /DRTCOMPAT /DLUA_BUILD_AS_DLL $(CFLAGS) /c /Folrtapi.obj lrtapi.c $(VERBOSE)
+	@echo|set /p dummy=$(PROGRESS)
+	@$(CC) /DRTWIN /DLUA_BUILD_AS_DLL $(CFLAGS) /c /Fosys\File.obj sys\File.c $(VERBOSE)
+	@echo|set /p dummy=$(PROGRESS)	
+	@$(LD) /DLL $(LDFLAGS) $(DLL_LIBS) $(BASE_O) /ignore:4217 /OUT:lua54.dll $(VERBOSE)
+	@echo|set /p dummy=$(PROGRESS)
+	@$(CC) /DLUA_BUILD_AS_DLL $(CFLAGS) /c /Folrtapi.obj lrtapi.c $(VERBOSE)
+	@echo|set /p dummy=$(PROGRESS)
+	@$(CC) /DLUA_BUILD_AS_DLL $(CFLAGS) /c /Fosys\File.obj sys\File.c $(VERBOSE)
+	@$(CC) $(CFLAGS) luart.c /link $(LDFLAGS) lua54.lib ole32.lib comctl32.lib shell32.lib /OUT:luart.exe  $(VERBOSE)
 	@-xcopy "..\..\tools\LuaRT-Studio\$(PLATFORM)\*" "..\..\tools\LuaRT-Studio" /s /e /Y >nul 2>&1
-	@-copy /Y ..\..\bin\luart.exe ..\..\tools\LuaRT-Studio\bin\luart.exe >nul
+	@-copy /Y luart.exe ..\..\tools\LuaRT-Studio\bin\luart.exe >nul
 	@-copy /Y ..\..\bin\wrtc.exe ..\..\tools\LuaRT-Studio\bin\wrtc.exe >nul
-	@-copy /Y ..\..\bin\lua54.dll ..\..\tools\LuaRT-Studio\bin\lua54.dll >nul	
+	@-copy /Y lua54.dll ..\..\tools\LuaRT-Studio\bin\lua54.dll >nul	
 	@echo|set /p dummy=$(PROGRESS)
 	-@rd ..\..\tools\LuaRT-Studio\examples /s /q 
 	@xcopy ..\..\examples ..\..\tools\LuaRT-Studio\examples\ /s /e /y >nul
