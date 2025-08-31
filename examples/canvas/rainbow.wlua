@@ -16,6 +16,9 @@ gradient.stop = { canvas.width, 0 }
 local pos = 0
 local dir = 4
 
+-- Uncomment to get more speed, but more CPU usage
+-- sys.scheduleInterval = 0
+
 function canvas:onPaint()
   self:begin()
   gradient.start = {pos, 0}

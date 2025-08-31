@@ -23,6 +23,7 @@
 #include <winreg.h>
 #include <shlobj.h>
 #include <shlwapi.h>
+#include <time.h>
 
 /* ------------------------------------------------------------------------ */
 
@@ -36,6 +37,8 @@ wchar_t temp_path[MAX_PATH];
 /* clock definitions */
 static LARGE_INTEGER freq;
 static BOOL perfc, elevated;
+
+extern DWORD SCHEDULE_INTERVAL;
 
 //-------------------------------------[ sys.clock() ]
 LUA_METHOD(sys, clock) {
@@ -191,6 +194,16 @@ LUA_PROPERTY_GET(sys, error) {
 
 LUA_PROPERTY_GET(sys, atexit) {
 	lua_getfield(L, LUA_REGISTRYINDEX, "atexit");
+	return 1;
+}
+
+LUA_PROPERTY_SET(sys, scheduleInterval) {
+	SCHEDULE_INTERVAL = (DWORD)luaL_checkinteger(L, 1);
+	return 0;
+}
+
+LUA_PROPERTY_GET(sys, scheduleInterval) {
+	lua_pushinteger(L, SCHEDULE_INTERVAL);
 	return 1;
 }
 
@@ -398,16 +411,16 @@ static int get_locale(lua_State *L, LCTYPE lc) {
 }
 
 //------------------------------------ sys.language property
-LUA_PROPERTY_GET(sysutils, language) {
+LUA_PROPERTY_GET(sys, language) {
   return get_locale(L, LOCALE_SLOCALIZEDDISPLAYNAME);
 }
 
 //------------------------------------ sys.locale property
-LUA_PROPERTY_GET(sysutils, locale) {
+LUA_PROPERTY_GET(sys, locale) {
   return get_locale(L, LOCALE_SNAME);
 }
 
-LUA_PROPERTY_SET(sysutils, locale) {
+LUA_PROPERTY_SET(sys, locale) {
 	wchar_t* lname = lua_towstring(L, 1);
 	
 	locale = LocaleNameToLCID(lname, 0);
@@ -577,11 +590,13 @@ MODULE_PROPERTIES(sys)
 	READWRITE_PROPERTY(sys, currentdir)
 	READWRITE_PROPERTY(sys, clipboard)
 	READWRITE_PROPERTY(sys, atexit)
-	READWRITE_PROPERTY(sysutils, locale)
-  	READONLY_PROPERTY(sysutils, language)
+	READWRITE_PROPERTY(sys, locale)
+  	READONLY_PROPERTY(sys, language)
+  	READWRITE_PROPERTY(sys, scheduleInterval)
 END
 
 LUAMOD_API int luaopen_sys(lua_State *L) {
+	srand((unsigned int)time(NULL));
 	perfc = QueryPerformanceFrequency(&freq);
 	elevated = FALSE;
 	SetConsoleOutputCP(65001); 

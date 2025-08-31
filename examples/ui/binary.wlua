@@ -45,13 +45,11 @@ file:open("read", "binary")
 -- use a Task to keep loading the file while updating the ui (for big files)
 async(function ()
   while true do
-    for i=1, 8 do
-      local data = file:read(16)
-      if #data == 0 then
-        return
-      end
-      edit:append(string.gsub(data:encode("hex"), "%w%w", function (byte) return byte.." " end).."  "..clean(data).."\n")
+    local data = file:read(16)
+    if #data == 0 then
+      return
     end
+    edit:append(string.gsub(data:encode("hex"), "%w%w", function (byte) return byte.." " end).."  "..clean(data).."\n")
     sleep()
   end  
 end)

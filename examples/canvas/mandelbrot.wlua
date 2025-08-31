@@ -11,6 +11,9 @@ win:center()
 
 local max_iterations = 64
 
+-- Get maximum speed by setting scheduling interval to zero
+sys.scheduleInterval = 0
+
 -- Uses internal timer for 30fps drawing
 function c:onPaint()
   self:begin()
@@ -45,7 +48,7 @@ function c:onPaint()
       col = col + 1
     end
     row = row + 1
-    if row % 50 == 0 then
+    if row % 100 == 0 then
       self:flip()
       sleep()
       self:begin()

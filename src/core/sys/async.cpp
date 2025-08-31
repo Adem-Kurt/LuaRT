@@ -15,8 +15,8 @@
 
 extern "C" {
 	LUA_API luart_type TTask;
+	LUA_API DWORD SCHEDULE_INTERVAL = 10;
 }
-
 
 static std::list<Task *> Tasks;
 static lua_CFunction lua_update = NULL;
@@ -136,6 +136,7 @@ BOOL resume_task(lua_State *L, Task *t, int args) {
 
 //-------- Task scheduler
 BOOL update_tasks(lua_State *L) {
+	static ULONGLONG lastTick = 0;
     ULONGLONG now = GetTickCount64();
     DWORD nextWake = INFINITE; // time in ms until next wake-up
 
@@ -205,7 +206,14 @@ BOOL update_tasks(lua_State *L) {
                 nextWake = remaining;
         }
     }
-	Sleep(nextWake != INFINITE ? nextWake : 1);
+	if (nextWake != INFINITE)
+		Sleep(nextWake);
+	else {
+		ULONGLONG elapsed = now - lastTick;
+		if (elapsed < SCHEDULE_INTERVAL)
+			Sleep(SCHEDULE_INTERVAL - elapsed);
+		lastTick = GetTickCount64(); 
+	}
     return true;
 }
 
