@@ -5,8 +5,9 @@
 *.ilk
 *.obj
 **src/core/*.lib
-lib/*.lib
 **src/modules/**/*.lib
+**tools/**/*.lib
+lib/*.lib
 *.pdb
 *.res
 *.a
