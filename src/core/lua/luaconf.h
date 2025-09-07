@@ -310,11 +310,13 @@
 #define LUA_API __declspec(dllexport)
 #else						/* }{ */
 #define LUA_API __declspec(dllimport)
-#endif
+#endif						/* } */
 
 #else				/* }{ */
-#define LUA_API		 __declspec(dllimport)
-#endif	
+
+#define LUA_API		__declspec(dllimport)
+
+#endif				/* } */
 
 
 /*

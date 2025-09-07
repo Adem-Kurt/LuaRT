@@ -99,7 +99,7 @@ default: toolchain
 
 infolua: utf8
 	@cmd /c echo.
-	@echo|set /p dummy="▸  Building Lua 5.4.7 VM          "
+	@echo|set /p dummy="▸  Building Lua 5.4.8 VM          "
 
 infocore:
 	@cmd /c echo.
@@ -234,10 +234,6 @@ buildtools: $(RTC_T)
 	@-signtool.exe sign /sha1 "4b47f71722cd511bc491e11f5a4130cb779f98f6" /tr http://time.certum.pl /td sha256  /fd sha256 /v "..\..\tools\QuickRT\QuickRT.exe" $(VERBOSE)
 	@-copy /Y ..\..\bin\lua54.dll ..\..\tools\QuickRT\lua54.dll >nul	
 	@echo|set /p dummy=$(PROGRESS)	
-# 	@-xcopy "..\..\tools\LuaRT-Studio\$(PLATFORM)\*" "..\..\tools\LuaRT-Studio" /s /e /Y >nul 2>&1
-# 	@-copy /Y ..\..\bin\luart.exe ..\..\tools\LuaRT-Studio\bin\luart.exe >nul
-# 	@-copy /Y ..\..\bin\wrtc.exe ..\..\tools\LuaRT-Studio\bin\wrtc.exe >nul
-# 	@-copy /Y ..\..\bin\lua54.dll ..\..\tools\LuaRT-Studio\bin\lua54.dll >nul	
 	@$(CC) /DRTCOMPAT /DLUA_BUILD_AS_DLL $(CFLAGS) /c /Folrtapi.obj lrtapi.c $(VERBOSE)
 	@echo|set /p dummy=$(PROGRESS)
 	@$(CC) /DRTWIN /DLUA_BUILD_AS_DLL $(CFLAGS) /c /Fosys\File.obj sys\File.c $(VERBOSE)
