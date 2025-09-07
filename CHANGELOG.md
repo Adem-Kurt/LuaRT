@@ -1,3 +1,99 @@
+## LuaRT v2.1.0 (Sept 07 2025)
+
+#### Highlights 
+- New hardware modules : `cpu`, `power`,  and `wifi`
+- New data serialization format modules : `xml` and `yaml`
+- Improved asynchronous Task operations and scheduling
+- `ui` module is no more integrated to desktop interpreters
+- Lua VM updated to 5.4.8
+- LuaRT binaries and setup files are now digitally signed
+- Various additions and bugfixes
+
+#### Lua VM
+- Updated to Lua VM to 5.4.8
+
+#### rtc
+- New: `-L` option to specify a new search path for Lua modules
+- Updated: Link only the correct module dll (either the static or dynamic version)
+- Fixed: static linking is more reliable now
+
+#### LuaRT C API
+- New: `lua_taskcount()` function to get current total Tasks count
+- Updated: `lua_pushtask()` now returns the pointer to the newly created Task struct
+- Updated: `lua_schedule()` now returns a boolean value
+
+#### sys module
+- New: `Task.priority`, `Task.timeout` and `Task.expired`properties
+- New: `Task.pause()` and `Task.resume()` methods
+- New `sys.idleThreshold` property to adjust the task scheduler cpu usage
+- Updated: `waitall()` now accepts to wait on the provided Tasks and gathers all results
+- Updated: Improved Task scheduler with faster Task switching and lower CPU charge
+- Fixed: Errors in Task are now correctly propagated when waiting
+- Fixed: Getting an integer value from a `sys.COM` property or method won't crash anymore
+
+#### cpu module
+- New `cpu` module to get CPU information and manage process priority.
+- Various CPU properties `cpu.usage`, `cpu.cores`, `cpu.threads`, `cpu.name`, `cpu.vendor`, `cpu.clock`, `cpu.currentclock`, `cpu.features`, `cpu.priority` and `cpu.cache`
+- New `cpu:prefetch()` method to prefetch a Lua string into the cache.
+
+#### power module
+- New `power` module to manage power state and battery information.
+- Power information properties with `power.battery`, `power.plugged`
+- Various functions to manage power mode : `power:hibernate()`, `power:sleep()`, `power:hold()`, `power:unhold()` and `power:displayoff()`
+- Power events `power.onPlugged()`, `power.onSuspend()`, `power.onResume()` and `power.onBatteryLow()`
+
+#### wifi module
+- `wifi:scan()` method to scan for available Wi-Fi networks.
+- `wifi:connect()` and `wifi:disconnect()` methods to manage Wi-Fi connections.
+- Various Wi-Fi network properties : `wifi.name` , `wifi.connected`, `wifi.quality`, `wifi.mac` and `wifi.channel`
+- `wifi.onConnected()` and `wifi.onDisconnected()` events.
+
+#### xml module
+- New `xml` module to parse and write XML strings and files.
+- New `xml.Node` object to manipulate XML nodes.
+- `xml.encode()` method to encode a string to `xml.Node`.
+- `xml.load()` and `xml.save()` methods for loading/saving `xml.Node` from/to file.
+
+#### yaml module
+- New `yaml` module to convert YAML form/to Lua tables
+- `yaml.decode()` and `yaml.encode()` methods for YAML strings.
+- `yaml.load()` and `yaml.save()` methods for YAML files.
+- Support for placeholder substitution with `{{variable}}` syntax.
+- `yaml.null` readonly property to represent a YAML `null` value.
+
+#### net module
+- New: `net.urlencode()` method to encode a `string` as a valid URL
+- Updated: `Socket.recv()` now returns a `Buffer` object instead of a `string`
+
+#### json module
+- Fixed: `json.load()` now closes the file correctly
+
+#### serial module
+- Fixed: `Port.rts` property now accepts `"on"`` value
+- Fixed: `Port.bytesize` now returns the correct value
+- Fixed: `Port.write()`, `Port.read()` and `Port.readline()` won't crash anymore
+
+#### webview module
+- Updated: Webview module updated to support new standalone `ui` module
+
+#### canvas module
+- New: `Canvas.capture()` method to save a snapshot of the Canvas
+- Updated: Canvas module updated to support new standalone `ui` module
+- Fixed: `Canvas` mouse events are now fired correctly
+- Fixed: `Canvas:onPaint()` event will keep throwing even if the parent window shows/hides
+
+#### ui module
+- New: `ui.task` and `ui.mainWindow` properties
+- Updated: `ui` module is now standalone
+- Updated: `ui` module now throws a Task to update the event loop constantly
+- Updated: `ui.run()` is deprecated and will be removed (replaced by `ui.mainWindow` and `ui.task`)
+- Fixed: Better ui responsiveness
+- Fixed: `Picture.save()` method now uses the correct format from file extension
+- Fixed: Sizes of widgets are now fixed when the text is empty
+- Fixed: Checking a Checkbox widget won't draw a selection rect anymore
+
+
+
 ## LuaRT v2.0.1 (June 08 2025)
 
 #### Highlights 
