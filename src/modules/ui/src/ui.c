@@ -759,11 +759,11 @@ LUA_PROPERTY_GET(ui, mainWindow) {
 }
 
 LUA_PROPERTY_SET(ui, mainWindow) {
-	if (lua_isnil(L, 3) && main) {
+	if (lua_isnil(L, 1) && main) {
 		main->ismain = FALSE;
 		main = NULL;
 	} else {
-		Widget *w = (Widget*)lua_toself(L, 3, UIWindow);
+		Widget *w = (Widget*)lua_toself(L, 1, UIWindow);
 		if (main && (main != w))
 			main->ismain = FALSE;
 		main = w;
@@ -1338,7 +1338,7 @@ MODULE_PROPERTIES(ui)
 	READONLY_PROPERTY(ui, dpi)
 	READONLY_PROPERTY(ui, windows)
 	READONLY_PROPERTY(ui, task)
-	READONLY_PROPERTY(ui, mainWindow)
+	READWRITE_PROPERTY(ui, mainWindow)
 END
 
 MODULE_FUNCTIONS(ui)
