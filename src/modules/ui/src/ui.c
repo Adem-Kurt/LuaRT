@@ -691,8 +691,8 @@ int do_update(lua_State *L) {
 					lua_error(L);
 				if (msg.message == WM_LUACHANGE && (w->wtype == UIEdit))
 						SendMessage(w->handle, EM_SETEVENTMASK, 0, ENM_CHANGE | ENM_SELCHANGE | ENM_MOUSEEVENTS);
-				else if (msg.message == WM_LUACLOSE) {				
-					int result = lua_wait(L, t);
+				else if (msg.message == WM_LUACLOSE) {		
+					int result = lua_wait(L, t);		
 					if (!result || lua_toboolean(L, -1)) {
 						ShowWindow(w->handle, SW_HIDE);
 						if (w->wtype == UIWindow && w->tooltip) {
@@ -1431,10 +1431,10 @@ int __declspec(dllexport)  luaopen_ui(lua_State *L) {
 	ui_interface.lua_registerevent = lua_registerevent;
 	ui_interface.WM_LUAMAX = &WM_LUAMAX;
 	ui_interface.WIDGET_METHODS = Widget_methods;
+	ui_interface.task = uitask;
 	lua_getmetatable(L, -1);
 	lua_pushlightuserdata(L, &ui_interface);
 	lua_setfield(L, -2, "__interface");
 	lua_pop(L, 1);		
-	// lua_setupdate(do_update);
 	return 1;
 }

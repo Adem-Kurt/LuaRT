@@ -8,6 +8,7 @@
 
 #include <luart.h>
 #include <Widget.h>
+#include <Task.h>
 #include <windows.h>
 #include <windowsx.h>
 #include <math.h>
@@ -30,7 +31,6 @@ UINT on_Hover;
 UINT on_MouseDown;
 UINT on_MouseClick;
 UINT on_MouseUp;
-UINT on_Paint;
 UINT on_MouseWheel;
 
 //--- Brush table helpers
@@ -101,10 +101,6 @@ LRESULT CALLBACK CanvasProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam, 
 process_up:
         PostMessage(hwnd, on_MouseUp, wParam, lParam);
         return 0;
-      case WM_SHOWWINDOW:
-        if (wParam)
-          PostMessage(hwnd, on_Paint, 0, 0);
-        break;
       case WM_RBUTTONDOWN:
         PostMessage(hwnd, onContext, 0, 0);
         wParam |= MK_RBUTTON;
@@ -131,7 +127,7 @@ process_event:
 static int onPaintContinue(lua_State* L, int status, lua_KContext ctx) {
   Widget *w = (Widget*)ctx;
 
-  if (IsWindowVisible((HWND)w->handle)) {
+  if (ui->task->status != TTerminated) {
     lua_rawgeti(L, LUA_REGISTRYINDEX, w->ref);
     if (lua_getfield(L, -1, "onPaint") == LUA_TFUNCTION) {
         lua_insert(L, -2);
@@ -690,11 +686,6 @@ int event_onHover(lua_State *L, Widget *w, MSG *msg) {
   return lua_throwevent(L, "onHover", 4);
 }
 
-int event_onPaint(lua_State *L, Widget *w, MSG *msg) {
-  lua_pushtask(L, onPaintContinue, w, NULL);
-  return 0;
-}
-
 int event_onMouseClick(lua_State *L, Widget *w, MSG *msg) {
   D2D1_POINT_2F point = toDIP((Direct2D*)w->user, GET_X_LPARAM(msg->lParam), GET_Y_LPARAM(msg->lParam));
   lua_pushnumber(L, point.x);
@@ -783,7 +774,6 @@ extern "C" {
         ui->lua_regwidgetmt(L, Canvas, ui->WIDGET_METHODS, FALSE, FALSE, TRUE, FALSE, FALSE);
         luaL_setrawfuncs(L, Canvas_methods);
         on_Hover = ui->lua_registerevent(L, NULL, event_onHover);
-        on_Paint = ui->lua_registerevent(L, NULL, event_onPaint);
         on_MouseDown = ui->lua_registerevent(L, NULL, event_onMouseDown);
         on_MouseUp = ui->lua_registerevent(L, NULL, event_onMouseUp);
         on_MouseClick = ui->lua_registerevent(L, NULL, event_onMouseClick);
