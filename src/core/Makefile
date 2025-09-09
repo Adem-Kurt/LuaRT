@@ -243,7 +243,7 @@ buildtools: $(RTC_T)
 	@$(CC) /DLUA_BUILD_AS_DLL $(CFLAGS) /c /Folrtapi.obj lrtapi.c $(VERBOSE)
 	@echo|set /p dummy=$(PROGRESS)
 	@$(CC) /DLUA_BUILD_AS_DLL $(CFLAGS) /c /Fosys\File.obj sys\File.c $(VERBOSE)
-	@$(CC) $(CFLAGS) luart.c /link $(LDFLAGS) lua54.lib ole32.lib comctl32.lib shell32.lib /OUT:luart.exe  $(VERBOSE)
+	@$(CC) $(CFLAGS) luart.c /link $(LDFLAGS) lua54.lib ole32.lib comctl32.lib shell32.lib resource.res /OUT:luart.exe  $(VERBOSE)
 	@-xcopy "..\..\tools\LuaRT-Studio\$(PLATFORM)\*" "..\..\tools\LuaRT-Studio" /s /e /Y >nul 2>&1
 	@-copy /Y luart.exe ..\..\tools\LuaRT-Studio\bin\luart.exe >nul
 	@-copy /Y ..\..\bin\wrtc.exe ..\..\tools\LuaRT-Studio\bin\wrtc.exe >nul
@@ -264,6 +264,8 @@ buildtools: $(RTC_T)
 sign: buildtools
 	@-signtool sign /sha1 "4b47f71722cd511bc491e11f5a4130cb779f98f6" /tr http://time.certum.pl /td sha256  /fd sha256 /v  ..\..\bin\*.exe $(VERBOSE)
 	@-signtool sign /sha1 "4b47f71722cd511bc491e11f5a4130cb779f98f6" /tr http://time.certum.pl /td sha256  /fd sha256 /v ..\..\bin\lua54.dll $(VERBOSE)
+	@-signtool sign /sha1 "4b47f71722cd511bc491e11f5a4130cb779f98f6" /tr http://time.certum.pl /td sha256  /fd sha256 /v ..\..\tools\LuaRT-Studio\bin\*.dll $(VERBOSE)
+	@-signtool sign /sha1 "4b47f71722cd511bc491e11f5a4130cb779f98f6" /tr http://time.certum.pl /td sha256  /fd sha256 /v ..\..\tools\LuaRT-Studio\bin\*.exe $(VERBOSE)
 
 setup: sign infosetup
 	@..\..\bin\luart.exe makedist.lua $(VERSION) $(PLATFORM) $(VERBOSE)

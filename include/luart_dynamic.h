@@ -280,6 +280,7 @@ typedef struct {
 	UI_INFO				lua_uigetinfo;
 	luaL_Reg 			*WIDGET_METHODS;
     luart_type          TWidget;
+	Task			    *task;
 } UIInterface;
 
 #ifdef __cplusplus
