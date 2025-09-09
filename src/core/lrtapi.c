@@ -77,7 +77,8 @@ LUA_API Task *lua_pushtask(lua_State *L, lua_KFunction taskfunc, void *userdata,
 	if (gc)
 		t->gc_func = gc;
 	lua_pushvalue(L, -1);
-	lua_call(L, 0, 0);
+	if (lua_pcall(L, 0, 0, 0))
+		lua_error(L);
 	return t;	
 }
 
