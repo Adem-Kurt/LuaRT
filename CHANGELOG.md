@@ -1,4 +1,4 @@
-## LuaRT v2.1.0 (Sept 07 2025)
+## LuaRT v2.1.0 (Sept 11 2025)
 
 #### Highlights 
 - New hardware modules : `cpu`, `power`,  and `wifi`
@@ -91,6 +91,7 @@
 - Fixed: `Picture.save()` method now uses the correct format from file extension
 - Fixed: Sizes of widgets are now fixed when the text is empty
 - Fixed: Checking a Checkbox widget won't draw a selection rect anymore
+- Fixed: `ui.info()`, `ui.warn()`, `ui.confirm()` and `ui.msg()` now put the owner Window to modal state
 
 
 

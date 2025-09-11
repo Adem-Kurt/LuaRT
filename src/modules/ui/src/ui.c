@@ -222,13 +222,6 @@ HWND GetMainWindow()
 	return oWind;
 }
 
-typedef struct {
-	wchar_t *msg;
-	wchar_t *title;
-	UINT 	options;
-	int		result;
-} MsgParam;
-
 static HHOOK hMsgBoxHook = NULL;
 static HHOOK hMsgBoxWndHook = NULL;
 static HICON hMsgIcon;
@@ -299,27 +292,18 @@ LRESULT CALLBACK CBTProc(int nCode, WPARAM wParam, LPARAM lParam)
 	return CallNextHookEx(hMsgBoxHook, nCode, wParam, lParam);
 }
 
-DWORD WINAPI CreateMessageBox(LPVOID lpParam) {
-	MsgParam *mp = ((MsgParam*)lpParam);
+int ThemedMsgBox(const wchar_t *title, wchar_t *msg, UINT options) {
+	HWND h = GetMainWindow();
+	hMsgIcon =  (HICON)SendMessage(h, WM_GETICON, 0, 0);
+	hMsgIcon = hMsgIcon ? hMsgIcon : LoadIcon(GetModuleHandle(NULL), MAKEINTRESOURCE(101));
 	hMsgBoxHook = SetWindowsHookEx(WH_CBT, CBTProc, NULL, GetCurrentThreadId());
 	if (DarkMode)
 		hMsgBoxWndHook = SetWindowsHookEx(WH_CALLWNDPROC, WndHookProc, NULL, GetCurrentThreadId());
-    mp->result = MessageBoxW(NULL, mp->msg, mp->title, mp->options | (uiLayout == WS_EX_LAYOUTRTL ? MB_RTLREADING : 0));
+    int result = MessageBoxW(h, msg, title, options | MB_SYSTEMMODAL | (uiLayout == WS_EX_LAYOUTRTL ? MB_RTLREADING : 0));
 	UnhookWindowsHookEx(hMsgBoxHook);
 	if (DarkMode)
 		UnhookWindowsHookEx(hMsgBoxWndHook);
-	return 0;
-}
-
-int ThemedMsgBox(const wchar_t *title, wchar_t *msg, UINT options) {
-	MsgParam mp;
-	hMsgIcon =  (HICON)SendMessage(GetMainWindow(), WM_GETICON, 0, 0);
-	hMsgIcon = hMsgIcon ? hMsgIcon : LoadIcon(GetModuleHandle(NULL), MAKEINTRESOURCE(101));
-	mp.title = (wchar_t*)title;
-	mp.options = options | MB_SYSTEMMODAL;
-	mp.msg = msg;
-	WaitForSingleObject(CreateThread(NULL, 0, &CreateMessageBox, &mp, 0, NULL), INFINITE);
-	return mp.result;
+	return result;
 }
 
 static int MsgBox(lua_State *L, UINT options, wchar_t *def) {
@@ -773,8 +757,12 @@ LUA_PROPERTY_SET(ui, mainWindow) {
 }
 
 static int RunTaskContinue(lua_State* L, int status, lua_KContext ctx) {
+	return (ctx && IsWindowVisible(((Widget*)ctx)->handle)) ? lua_yieldk(L, 0, ctx, RunTaskContinue) : 0;
+}
+
+static int UITaskContinue(lua_State* L, int status, lua_KContext ctx) {
 	do_update(L);
-	return uitask->status < TTerminated ? lua_yieldk(L, 0, ctx, RunTaskContinue) : 0;
+	return uitask->status < TTerminated ? lua_yieldk(L, 0, ctx, UITaskContinue) : 0;
 }
 
 LUA_METHOD(ui, run) {
@@ -1368,7 +1356,7 @@ int __declspec(dllexport)  luaopen_ui(lua_State *L) {
 
 	InitDarkMode();
 	HRESULT hr = OleInitialize(NULL);
-	uitask = lua_pushtask(L, RunTaskContinue, NULL, NULL);
+	uitask = lua_pushtask(L, UITaskContinue, NULL, NULL);
 
 	wcex.cbSize = sizeof(WNDCLASSEX);
 	wcex.lpfnWndProc = WindowProc;
